@@ -1,3 +1,21 @@
+
+import random
+
+# Window size
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 800
+
+# Generate star positions once
+NUM_STARS = 120
+star_positions = [(random.randint(0, WINDOW_WIDTH), random.randint(0, WINDOW_HEIGHT)) for _ in range(NUM_STARS)]
+
+def draw_stars():
+	glColor3f(1, 1, 1)
+	glPointSize(2)
+	glBegin(GL_POINTS)
+	for x, y in star_positions:
+		glVertex2f(x, y)
+	glEnd()
 from math import sin, cos
 
 from OpenGL.GL import *
@@ -63,8 +81,9 @@ def display():
 	gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
 	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
+	draw_stars()
 	draw_player()
-	draw_text(10, WINDOW_HEIGHT - 30, "UFO Arcade Game")
+	draw_text(10, WINDOW_HEIGHT - 30, "THE ULTIMATE UFO")
 	glutSwapBuffers()
 
 def update(value):
