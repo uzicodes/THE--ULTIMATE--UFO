@@ -1,3 +1,4 @@
+from math import sin, cos
 
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -37,15 +38,30 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
 	glMatrixMode(GL_MODELVIEW)
 
 def draw_player():
-	glColor3f(0, 1, 0)
-	glBegin(GL_TRIANGLES)
-	glVertex2f(player_x, player_y + 30)
-	glVertex2f(player_x - 20, player_y - 20)
-	glVertex2f(player_x + 20, player_y - 20)
-	glEnd()
+		glColor3f(0, 1, 0)
+		glBegin(GL_TRIANGLES)
+		# Main body (triangle)
+		glVertex2f(player_x, player_y + 40)
+		glVertex2f(player_x - 40, player_y - 20)
+		glVertex2f(player_x + 40, player_y - 20)
+		glEnd()
+
+		glColor3f(0, 0.7, 1)
+		glBegin(GL_POLYGON)
+		# Cockpit (ellipse)
+		for i in range(32):
+			angle = 2 * 3.14159 * i / 32
+			x = player_x + 15 * cos(angle)
+			y = player_y + 5 + 10 * sin(angle)
+			glVertex2f(x, y)
+		glEnd()
 
 def display():
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity()
+	gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
+	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
 	draw_player()
 	draw_text(10, WINDOW_HEIGHT - 30, "UFO Arcade Game")
@@ -88,7 +104,7 @@ def main():
 	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
 	glutCreateWindow(b"THE ULTIMATE UFO")
 	glClearColor(0, 0, 0.1, 1)
-	gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
+	# Remove gluOrtho2D from here; set projection in display()
 	glutDisplayFunc(display)
 	glutKeyboardFunc(keyboard)
 	glutKeyboardUpFunc(keyboard_up)
