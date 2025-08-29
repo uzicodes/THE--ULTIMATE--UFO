@@ -5,13 +5,16 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 
 # Window size
-WINDOW_WIDTH = 1000
+WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
 
-# Player (UFO) state
-player_x = WINDOW_WIDTH // 2
-player_y = 100
+def reset_player_position():
+	global player_x, player_y
+	player_x = WINDOW_WIDTH // 2
+	player_y = 50  # 50 pixels from the bottom
 player_speed = 10
+
+reset_player_position()
 
 # Key state
 key_states = {}
