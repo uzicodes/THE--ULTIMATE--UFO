@@ -1,0 +1,19 @@
+(Core Gameplay & Mechanics)
+
+Player Control: WASD keys to move the UFO. Also, the left arrow and the right arrow keys make the UFO go left and right, the same as the A & D keys.
+
+Object Management: Implement a Python class for diamonds, bombs, and bullets to manage their position, velocity, and state.
+
+Collision Detection: Write Python functions to check for collisions between objects. Use simple bounding spheres or AABB (Axis-Aligned Bounding Boxes) for efficiency.
+
+Object Spawning: Implement a Python script to dynamically generate new diamond and bomb instances at random intervals, ensuring they are placed outside the camera's initial view.
+
+Scoring System: Maintain a simple integer variable in Python for the score, incrementing or decrementing it based on collision events.
+
+Levels: There will be levels where the difficulty levels increase with the increase of velocity of the falling objects.
+
+Penalty System: For shooting bombs, apply a penalty by deducting points and potentially applying a temporary slow-down effect by manipulating the UFO's speed variable.
+
+Health/Life System: Track player health with a variable that decreases upon colliding with a bomb, ending the game when it reaches zero.
+
+Difficulty Curve: Gradually increase the velocity of all incoming objects over time by updating their speed variables in the main game loop.
