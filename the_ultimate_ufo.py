@@ -56,23 +56,57 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
 	glMatrixMode(GL_MODELVIEW)
 
 def draw_player():
-		glColor3f(0, 1, 0)
-		glBegin(GL_TRIANGLES)
-		# Main body (triangle)
-		glVertex2f(player_x, player_y + 40)
-		glVertex2f(player_x - 40, player_y - 20)
-		glVertex2f(player_x + 40, player_y - 20)
-		glEnd()
+		glPushMatrix()
+		glTranslatef(player_x, player_y, 0)
 
-		glColor3f(0, 0.7, 1)
-		glBegin(GL_POLYGON)
-		# Cockpit (ellipse)
-		for i in range(32):
-			angle = 2 * 3.14159 * i / 32
-			x = player_x + 15 * cos(angle)
-			y = player_y + 5 + 10 * sin(angle)
-			glVertex2f(x, y)
-		glEnd()
+		# Main body (cone)
+		glColor3f(0.2, 0.8, 0.2)
+		glPushMatrix()
+		glRotatef(-90, 1, 0, 0)  # Point cone upwards
+		glutSolidCone(40, 120, 40, 10)
+		glPopMatrix()
+
+		# Base of the cone (cuboid to visually close it)
+		glColor3f(0.3, 0.6, 0.3)
+		glPushMatrix()
+		glTranslatef(0, -120, 0)  # Move to the bottom of the cone
+		glScalef(2.5, 0.3, 2.5)  # Make it larger and flatter
+		glutSolidCube(40)
+		glPopMatrix()
+
+		# Large left wing (cuboid)
+		glColor3f(0.7, 0.2, 0.2)
+		glPushMatrix()
+		glTranslatef(-90, 40, 0)
+		glScalef(5, 0.5, 0.7)
+		glutSolidCube(20)
+		glPopMatrix()
+
+		# Large right wing (cuboid)
+		glColor3f(0.7, 0.2, 0.2)
+		glPushMatrix()
+		glTranslatef(90, 40, 0)
+		glScalef(5, 0.5, 0.7)
+		glutSolidCube(20)
+		glPopMatrix()
+
+		# Small left wing (cuboid)
+		glColor3f(0.9, 0.7, 0.2)
+		glPushMatrix()
+		glTranslatef(-60, -10, 0)
+		glScalef(2, 0.3, 0.5)
+		glutSolidCube(20)
+		glPopMatrix()
+
+		# Small right wing (cuboid)
+		glColor3f(0.9, 0.7, 0.2)
+		glPushMatrix()
+		glTranslatef(60, -10, 0)
+		glScalef(2, 0.3, 0.5)
+		glutSolidCube(20)
+		glPopMatrix()
+
+		glPopMatrix()
 
 def display():
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
