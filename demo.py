@@ -276,7 +276,6 @@ def keyboardListener(key, x, y):
             ufo_x += ufo_speed
     # Shoot bullet (Space key)
     if key == b' ':
-        print('Space pressed: firing bullets')
         # Fire from head shooters (center front)
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
@@ -294,7 +293,7 @@ def specialKeyListener(key, x, y):
 
 def mouseListener(button, state, x, y):
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN and not game_over:
-        # Fire from head shooters (center front)
+        # Fire from head shooters
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
 
