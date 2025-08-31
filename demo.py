@@ -47,7 +47,7 @@ class Diamond:
         self.x = x
         self.y = y
         self.z = z
-        self.speed = 5 + difficulty_level
+        self.speed = 2 + difficulty_level * 0.5
         self.active = True
         self.rotation = 0
 
@@ -57,7 +57,7 @@ class Bomb:
         self.x = x
         self.y = y
         self.z = z
-        self.speed = 3 + difficulty_level * 0.5
+        self.speed = 1.2 + difficulty_level * 0.3
         self.active = True
         self.rotation = 0
 
