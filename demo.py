@@ -6,11 +6,14 @@ import random
 import math
 
 # Game variables
+NUM_STARS = 100
+
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
 GRID_LENGTH = 600
 
 # Player UFO variables
+star_positions = [(random.randint(-GRID_LENGTH, GRID_LENGTH), random.randint(GRID_LENGTH + 50, WINDOW_HEIGHT - 10)) for _ in range(NUM_STARS)]
 ufo_x = 0
 ufo_y = GRID_LENGTH - 100  # Far end (top of grid)
 ufo_z = 50
@@ -391,9 +394,28 @@ def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
-    
+
+    # Draw stars on the black background (above the play field)
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+    glColor3f(1, 1, 1)
+    glPointSize(2)
+    glBegin(GL_POINTS)
+    for x, y in star_positions:
+        glVertex2f(x + WINDOW_WIDTH // 2, y)
+    glEnd()
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+
     setupCamera()
-    
+
     # Draw the grid (game floor)
     glBegin(GL_QUADS)
     glColor3f(0.2, 0.2, 0.4)
