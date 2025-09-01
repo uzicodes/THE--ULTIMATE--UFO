@@ -25,6 +25,7 @@ fovY = 120
 
 # Game objects
 bullets = []
+diamonds = []
 
 # Game state
 score = 0
@@ -40,6 +41,16 @@ class Bullet:
         self.y = y
         self.z = z
         self.speed = 20
+        self.active = True
+
+# Diamond class
+class Diamond:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.speed = 0.7  # Much slower falling speed
+        self.rotation = 0
         self.active = True
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
@@ -61,6 +72,64 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
+
+def draw_diamond(diamond):
+    """Draw a rotating diamond using basic OpenGL shapes"""
+    glPushMatrix()
+    glTranslatef(diamond.x, diamond.y, diamond.z)
+    glRotatef(diamond.rotation, 1, 1, 0)  # Rotate around x and y axis
+    
+    # Set diamond color (bright cyan/blue)
+    glColor3f(0, 0.8, 1)
+    
+    # Create diamond shape using two pyramids (even bigger size)
+    # Top pyramid
+    glBegin(GL_TRIANGLES)
+    # Front face
+    glVertex3f(0, 0, 35)    # top point (increased from 30)
+    glVertex3f(-25, -18, 0) # bottom left (increased from -20, -15)
+    glVertex3f(25, -18, 0)  # bottom right (increased from 20, -15)
+    
+    # Right face
+    glVertex3f(0, 0, 35)    # top point
+    glVertex3f(25, -18, 0)  # front right
+    glVertex3f(0, -30, 0)   # back point (increased from -25)
+    
+    # Back face
+    glVertex3f(0, 0, 35)    # top point
+    glVertex3f(0, -30, 0)   # back point
+    glVertex3f(-25, -18, 0) # front left
+    
+    # Left face
+    glVertex3f(0, 0, 35)    # top point
+    glVertex3f(-25, -18, 0) # front left
+    glVertex3f(25, -18, 0)  # front right
+    glEnd()
+    
+    # Bottom pyramid
+    glBegin(GL_TRIANGLES)
+    # Front face
+    glVertex3f(0, 0, -35)   # bottom point (increased from -30)
+    glVertex3f(25, -18, 0)  # top right
+    glVertex3f(-25, -18, 0) # top left
+    
+    # Right face
+    glVertex3f(0, 0, -35)   # bottom point
+    glVertex3f(0, -30, 0)   # back point
+    glVertex3f(25, -18, 0)  # front right
+    
+    # Back face
+    glVertex3f(0, 0, -35)   # bottom point
+    glVertex3f(-25, -18, 0) # front left
+    glVertex3f(0, -30, 0)   # back point
+    
+    # Left face
+    glVertex3f(0, 0, -35)   # bottom point
+    glVertex3f(-25, -18, 0) # front left
+    glVertex3f(25, -18, 0)  # front right
+    glEnd()
+    
+    glPopMatrix()
 
 def draw_ufo():
     """Draw UFO based on the provided sketch"""
@@ -151,15 +220,43 @@ def draw_bullet(bullet):
     glPushMatrix()
     glTranslatef(bullet.x, bullet.y, bullet.z)
     glColor3f(1, 1, 0)  # Yellow bullets
-    glutSolidSphere(3, 6, 6)
+    glutSolidSphere(6, 8, 8)  # Bigger bullet size (increased from 3 to 6)
     glPopMatrix()
 
+def spawn_diamond():
+    """Spawn a new diamond at random position from the entire top edge of the grid"""
+    # Random X position across the entire width of the grid
+    x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+    # Start from the far edge (top of the grid)
+    y = -GRID_LENGTH + 20  
+    # Random height for visual variety
+    z = random.randint(15, 80)
+    diamonds.append(Diamond(x, y, z))
+
 def idle():
+    global spawn_timer
+    
+    # Spawn diamonds randomly and less frequently
+    spawn_timer += 1
+    if spawn_timer >= random.randint(90, 180):  # Random spawn between 1.5-3 seconds
+        spawn_diamond()
+        spawn_timer = 0
+    
     # Update bullets
     for bullet in bullets[:]:
         bullet.y -= bullet.speed  # Bullets go toward the viewer (bottom)
         if bullet.y < -GRID_LENGTH:
             bullets.remove(bullet)
+    
+    # Update diamonds
+    for diamond in diamonds[:]:
+        diamond.y += diamond.speed  # Diamonds move towards UFO (positive y direction)
+        diamond.rotation += 3  # Back to faster rotation for visual appeal
+        
+        # Remove diamonds that reach the UFO side (lower grid boundary)
+        if diamond.y > GRID_LENGTH:
+            diamonds.remove(diamond)
+    
     glutPostRedisplay()
 
 def showScreen():
@@ -214,6 +311,9 @@ def showScreen():
     for bullet in bullets:
         draw_bullet(bullet)
     
+    for diamond in diamonds:
+        draw_diamond(diamond)
+    
     # Draw UI
     draw_text(10, 770, f"Your Score: {score}")
     draw_text(10, 740, f"Health: {health}%")
@@ -227,24 +327,6 @@ def showScreen():
     
     glutSwapBuffers()
 
-def main():
-    glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-    glutInitWindowPosition(0, 0)
-    glutCreateWindow(b"THE ULTIMATE UFO")
-    
-    glEnable(GL_DEPTH_TEST)
-    glClearColor(0, 0, 0.1, 1)
-    
-    glutDisplayFunc(showScreen)
-    glutKeyboardFunc(keyboardListener)
-    glutSpecialFunc(specialKeyListener)
-    glutMouseFunc(mouseListener)
-    glutIdleFunc(idle)
-    
-    glutMainLoop()
-
 def setupCamera():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -255,7 +337,7 @@ def setupCamera():
     gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
 
 def keyboardListener(key, x, y):
-    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level
+    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds
     if game_over:
         if key == b'r':  # Reset game
             ufo_x = 0
@@ -266,6 +348,7 @@ def keyboardListener(key, x, y):
             spawn_timer = 0
             difficulty_level = 1
             bullets.clear()
+            diamonds.clear()
         return
     # UFO stays at the bottom, only allow left/right movement
     if key == b'a':
@@ -296,6 +379,24 @@ def mouseListener(button, state, x, y):
         # Fire from head shooters
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
+
+def main():
+    glutInit()
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+    glutInitWindowPosition(0, 0)
+    glutCreateWindow(b"THE ULTIMATE UFO")
+    
+    glEnable(GL_DEPTH_TEST)
+    glClearColor(0, 0, 0.1, 1)
+    
+    glutDisplayFunc(showScreen)
+    glutKeyboardFunc(keyboardListener)
+    glutSpecialFunc(specialKeyListener)
+    glutMouseFunc(mouseListener)
+    glutIdleFunc(idle)
+    
+    glutMainLoop()
 
 if __name__ == "__main__":
     main()
