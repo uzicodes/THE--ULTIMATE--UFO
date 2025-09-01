@@ -74,15 +74,15 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glMatrixMode(GL_MODELVIEW)
 
 def draw_diamond(diamond):
-    """Draw a rotating diamond using basic OpenGL shapes"""
+    
     glPushMatrix()
     glTranslatef(diamond.x, diamond.y, diamond.z)
     glRotatef(diamond.rotation, 1, 1, 0)  # Rotate around x and y axis
     
-    # Set diamond color (bright cyan/blue)
+    # Set diamond color 
     glColor3f(0, 0.8, 1)
     
-    # Create diamond shape using two pyramids (even bigger size)
+    # Create diamond shape using two pyramids 
     # Top pyramid
     glBegin(GL_TRIANGLES)
     # Front face
