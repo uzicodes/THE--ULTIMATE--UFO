@@ -227,18 +227,17 @@ def spawn_diamond():
     """Spawn a new diamond at random position from the entire top edge of the grid"""
     # Random X position across the entire width of the grid
     x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
-    # Start from the far edge (top of the grid)
-    y = -GRID_LENGTH + 20  
+    # Start from the top edge (far end)
+    y = -GRID_LENGTH + 20
     # Random height for visual variety
     z = random.randint(15, 80)
     diamonds.append(Diamond(x, y, z))
 
 def idle():
     global spawn_timer
-    
-    # Spawn diamonds randomly and less frequently
+    # Spawn diamonds even less frequently for level-1
     spawn_timer += 1
-    if spawn_timer >= random.randint(90, 180):  # Random spawn between 1.5-3 seconds
+    if spawn_timer >= random.randint(720, 1080):  # Random spawn between 12-18 seconds
         spawn_diamond()
         spawn_timer = 0
     
@@ -250,8 +249,8 @@ def idle():
     
     # Update diamonds
     for diamond in diamonds[:]:
-        diamond.y += diamond.speed  # Diamonds move towards UFO (positive y direction)
-        diamond.rotation += 3  # Back to faster rotation for visual appeal
+        diamond.y += 0.25  # Falling speed remains slow
+        diamond.rotation += 3
         
         # Remove diamonds that reach the UFO side (lower grid boundary)
         if diamond.y > GRID_LENGTH:
