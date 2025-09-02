@@ -367,12 +367,11 @@ def setupCamera():
                   0, 0, 1)  # Up vector (z-axis)
 
 def keyboardListener(key, x, y):
-    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, camera_mode_3d
-    
+    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds
     if game_over:
-        if key == b'r':  # Reset game
+        if key == b'r':
             ufo_x = 0
-            ufo_y = GRID_LENGTH - 180  # Always reset to far end
+            ufo_y = GRID_LENGTH - 180
             score = 0
             health = 100
             game_over = False
@@ -380,24 +379,19 @@ def keyboardListener(key, x, y):
             difficulty_level = 1
             bullets.clear()
             diamonds.clear()
-            camera_mode_3d = False  # Reset to overhead view
         return
-    
-    # Toggle camera mode with C key
-    if key == b'c' or key == b'C':
-        camera_mode_3d = not camera_mode_3d
-        return
-    
     # UFO stays at the bottom, only allow left/right movement
-    if key == b'a' or key == b'A':
+    moved = False
+    if key == b'a':
         if ufo_x < GRID_LENGTH - 100:
             ufo_x += ufo_speed
-    if key == b'd' or key == b'D':
+            moved = True
+    if key == b'd':
         if ufo_x > -GRID_LENGTH + 100:
             ufo_x -= ufo_speed
+            moved = True
     # Shoot bullet (Space key)
     if key == b' ':
-        # Fire from head shooters (center front)
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
 
@@ -428,7 +422,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-    glutInitWindowPosition(100, 10)  # Move window a bit higher on the screen
+    glutInitWindowPosition(100, 10)  
     glutCreateWindow(b"THE ULTIMATE UFO")
     glEnable(GL_DEPTH_TEST)
     glClearColor(0, 0, 0.1, 1)
