@@ -341,33 +341,22 @@ def setupCamera():
     if camera_mode_3d:
         # 3D pilot view - narrower field of view for more realistic perspective
         gluPerspective(75, 1.25, 0.1, 1500)
-    else:
-        # Overhead view - wider field of view
-        gluPerspective(fovY, 1.25, 0.1, 1500)
-    
-    glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
-    glLoadIdentity()  # Reset the model-view matrix
-
-    if camera_mode_3d:
-        # 3D pilot view - camera positioned inside UFO cockpit looking forward
-        # Camera is at UFO position but slightly elevated and forward
-        pilot_x = ufo_x
-        pilot_y = ufo_y + 60  # Slightly forward from UFO center
-        pilot_z = ufo_z + 40  # Elevated inside the cockpit
-        
-        # Look towards the far end of the grid where diamonds spawn
-        gluLookAt(pilot_x, pilot_y, pilot_z,      # Camera position (pilot's eyes)
-                  pilot_x, pilot_y - 200, pilot_z,  # Look straight ahead towards far end
-                  0, 0, 1)                         # Up vector (z-axis)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        # Pilot view: camera behind and above UFO, looking toward falling diamonds
+        gluLookAt(ufo_x, ufo_y + 60, ufo_z + 30,  # Camera closer and lower to UFO for better bullet visibility
+                  ufo_x, ufo_y - 100, ufo_z,      # Look toward falling diamonds
+                  0, 0, 1)                        # Up vector
     else:
         # Overhead view - original camera position
+        gluPerspective(fovY, 1.25, 0.1, 1500)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
         x, y, z = camera_pos
-        gluLookAt(x, y, z,  # Camera position
-                  0, 0, 0,  # Look-at target
-                  0, 0, 1)  # Up vector (z-axis)
+        gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
 
 def keyboardListener(key, x, y):
-    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds
+    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, camera_mode_3d
     if game_over:
         if key == b'r':
             ufo_x = 0
@@ -380,6 +369,9 @@ def keyboardListener(key, x, y):
             bullets.clear()
             diamonds.clear()
         return
+    # Toggle camera mode with 'C' key
+    if key == b'c':
+        camera_mode_3d = not camera_mode_3d
     # UFO stays at the bottom, only allow left/right movement
     moved = False
     if key == b'a':
