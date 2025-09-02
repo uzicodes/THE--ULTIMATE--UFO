@@ -426,20 +426,17 @@ def mouseListener(button, state, x, y):
 
 def main():
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GL_DEPTH)  # Enable depth testing
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-    glutInitWindowPosition(0, 0)
+    glutInitWindowPosition(100, 10)  # Move window a bit higher on the screen
     glutCreateWindow(b"THE ULTIMATE UFO")
-    
-    glEnable(GL_DEPTH_TEST)  # Enable depth testing for proper 3D rendering
+    glEnable(GL_DEPTH_TEST)
     glClearColor(0, 0, 0.1, 1)
-    
     glutDisplayFunc(showScreen)
     glutKeyboardFunc(keyboardListener)
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
     glutIdleFunc(idle)
-    
     glutMainLoop()
 
 if __name__ == "__main__":
