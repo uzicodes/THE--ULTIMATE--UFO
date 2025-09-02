@@ -390,11 +390,11 @@ def keyboardListener(key, x, y):
     
     # UFO stays at the bottom, only allow left/right movement
     if key == b'a' or key == b'A':
-        if ufo_x > -GRID_LENGTH + 100:
-            ufo_x -= ufo_speed
-    if key == b'd' or key == b'D':
         if ufo_x < GRID_LENGTH - 100:
             ufo_x += ufo_speed
+    if key == b'd' or key == b'D':
+        if ufo_x > -GRID_LENGTH + 100:
+            ufo_x -= ufo_speed
     # Shoot bullet (Space key)
     if key == b' ':
         # Fire from head shooters (center front)
@@ -409,11 +409,11 @@ def specialKeyListener(key, x, y):
     if game_over:
         return
     if key == GLUT_KEY_LEFT:
-        if ufo_x > -GRID_LENGTH + 100:
-            ufo_x -= ufo_speed
-    if key == GLUT_KEY_RIGHT:
         if ufo_x < GRID_LENGTH - 100:
             ufo_x += ufo_speed
+    if key == GLUT_KEY_RIGHT:
+        if ufo_x > -GRID_LENGTH + 100:
+            ufo_x -= ufo_speed
 
 def mouseListener(button, state, x, y):
     """
