@@ -22,6 +22,7 @@ ufo_speed = 15
 # Camera variables
 camera_pos = (0, 500, 500)
 fovY = 120
+camera_mode_3d = False  # Toggle between 2D overhead and 3D pilot view
 
 # Game objects
 bullets = []
@@ -74,7 +75,6 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glMatrixMode(GL_MODELVIEW)
 
 def draw_diamond(diamond):
-    
     glPushMatrix()
     glTranslatef(diamond.x, diamond.y, diamond.z)
     glRotatef(diamond.rotation, 1, 1, 0)  # Rotate around x and y axis
@@ -131,10 +131,7 @@ def draw_diamond(diamond):
     
     glPopMatrix()
 
-
-
 def draw_ufo():
-    
     glPushMatrix()
     glTranslatef(ufo_x, ufo_y, ufo_z)
     
@@ -265,24 +262,25 @@ def showScreen():
     glLoadIdentity()
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    # Draw stars on the black background (above the play field)
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-    glColor3f(1, 1, 1)
-    glPointSize(2)
-    glBegin(GL_POINTS)
-    for x, y in star_positions:
-        glVertex2f(x + WINDOW_WIDTH // 2, y)
-    glEnd()
-    glPopMatrix()
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
+    # Draw stars on the black background only in overhead view
+    if not camera_mode_3d:
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+        glColor3f(1, 1, 1)
+        glPointSize(2)
+        glBegin(GL_POINTS)
+        for x, y in star_positions:
+            glVertex2f(x + WINDOW_WIDTH // 2, y)
+        glEnd()
+        glPopMatrix()
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
 
     setupCamera()
 
@@ -307,7 +305,9 @@ def showScreen():
     
     # Draw game objects
     if not game_over:
-        draw_ufo()
+        # In 3D pilot view, don't draw the UFO since we're inside it
+        if not camera_mode_3d:
+            draw_ufo()
     
     for bullet in bullets:
         draw_bullet(bullet)
@@ -316,10 +316,12 @@ def showScreen():
         draw_diamond(diamond)
     
     # Draw UI
+    camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
     draw_text(10, 770, f"Your Score: {score}")
     draw_text(10, 740, f"Health: {health}%")
     draw_text(10, 710, f"Level: {difficulty_level}")
-    draw_text(10, 680, "Controls: WASD/Arrow Keys to move, Space/Mouse to shoot")
+    draw_text(10, 680, f"Camera: {camera_mode_text}")
+    draw_text(10, 650, "Controls: WASD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
     
     if game_over:
         draw_text(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT//2, "GAME OVER!")
@@ -329,16 +331,44 @@ def showScreen():
     glutSwapBuffers()
 
 def setupCamera():
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(fovY, 1.25, 0.1, 1500)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    x, y, z = camera_pos
-    gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
+    """
+    Configures the camera's projection and view settings.
+    Uses a perspective projection and positions the camera to look at the target.
+    """
+    glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
+    glLoadIdentity()  # Reset the projection matrix
+    
+    if camera_mode_3d:
+        # 3D pilot view - narrower field of view for more realistic perspective
+        gluPerspective(75, 1.25, 0.1, 1500)
+    else:
+        # Overhead view - wider field of view
+        gluPerspective(fovY, 1.25, 0.1, 1500)
+    
+    glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
+    glLoadIdentity()  # Reset the model-view matrix
+
+    if camera_mode_3d:
+        # 3D pilot view - camera positioned inside UFO cockpit looking forward
+        # Camera is at UFO position but slightly elevated and forward
+        pilot_x = ufo_x
+        pilot_y = ufo_y + 60  # Slightly forward from UFO center
+        pilot_z = ufo_z + 40  # Elevated inside the cockpit
+        
+        # Look towards the far end of the grid where diamonds spawn
+        gluLookAt(pilot_x, pilot_y, pilot_z,      # Camera position (pilot's eyes)
+                  pilot_x, pilot_y - 200, pilot_z,  # Look straight ahead towards far end
+                  0, 0, 1)                         # Up vector (z-axis)
+    else:
+        # Overhead view - original camera position
+        x, y, z = camera_pos
+        gluLookAt(x, y, z,  # Camera position
+                  0, 0, 0,  # Look-at target
+                  0, 0, 1)  # Up vector (z-axis)
 
 def keyboardListener(key, x, y):
-    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds
+    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, camera_mode_3d
+    
     if game_over:
         if key == b'r':  # Reset game
             ufo_x = 0
@@ -350,12 +380,19 @@ def keyboardListener(key, x, y):
             difficulty_level = 1
             bullets.clear()
             diamonds.clear()
+            camera_mode_3d = False  # Reset to overhead view
         return
+    
+    # Toggle camera mode with C key
+    if key == b'c' or key == b'C':
+        camera_mode_3d = not camera_mode_3d
+        return
+    
     # UFO stays at the bottom, only allow left/right movement
-    if key == b'a':
+    if key == b'a' or key == b'A':
         if ufo_x > -GRID_LENGTH + 100:
             ufo_x -= ufo_speed
-    if key == b'd':
+    if key == b'd' or key == b'D':
         if ufo_x < GRID_LENGTH - 100:
             ufo_x += ufo_speed
     # Shoot bullet (Space key)
@@ -365,6 +402,9 @@ def keyboardListener(key, x, y):
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
 
 def specialKeyListener(key, x, y):
+    """
+    Handles special key inputs (arrow keys) for UFO movement.
+    """
     global ufo_x, ufo_y
     if game_over:
         return
@@ -376,6 +416,9 @@ def specialKeyListener(key, x, y):
             ufo_x += ufo_speed
 
 def mouseListener(button, state, x, y):
+    """
+    Handles mouse inputs for firing bullets (left click).
+    """
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN and not game_over:
         # Fire from head shooters
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
@@ -383,12 +426,12 @@ def mouseListener(button, state, x, y):
 
 def main():
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GL_DEPTH)  # Enable depth testing
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     glutInitWindowPosition(0, 0)
     glutCreateWindow(b"THE ULTIMATE UFO")
     
-    glEnable(GL_DEPTH_TEST)
+    glEnable(GL_DEPTH_TEST)  # Enable depth testing for proper 3D rendering
     glClearColor(0, 0, 0.1, 1)
     
     glutDisplayFunc(showScreen)
