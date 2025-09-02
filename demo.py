@@ -15,7 +15,7 @@ GRID_LENGTH = 600
 # Player UFO variables
 star_positions = [(random.randint(-GRID_LENGTH, GRID_LENGTH), random.randint(GRID_LENGTH + 50, WINDOW_HEIGHT - 10)) for _ in range(NUM_STARS)]
 ufo_x = 0
-ufo_y = GRID_LENGTH - 100  # Far end (top of grid)
+ufo_y = GRID_LENGTH - 50  # Lower UFO closer to the grid 
 ufo_z = 50
 ufo_speed = 15
 
@@ -131,8 +131,10 @@ def draw_diamond(diamond):
     
     glPopMatrix()
 
+
+
 def draw_ufo():
-    """Draw UFO based on the provided sketch"""
+    
     glPushMatrix()
     glTranslatef(ufo_x, ufo_y, ufo_z)
     
@@ -340,7 +342,7 @@ def keyboardListener(key, x, y):
     if game_over:
         if key == b'r':  # Reset game
             ufo_x = 0
-            ufo_y = GRID_LENGTH - 100  # Always reset to far end
+            ufo_y = GRID_LENGTH - 180  # Always reset to far end
             score = 0
             health = 100
             game_over = False
