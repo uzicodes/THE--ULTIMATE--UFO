@@ -233,28 +233,32 @@ def spawn_diamond():
     diamonds.append(Diamond(x, y, z))
 
 def idle():
-    global spawn_timer
+    global spawn_timer, score
     # Spawn diamonds even less frequently for level-1
     spawn_timer += 1
-    if spawn_timer >= random.randint(720, 1080):  # Random spawn between 12-18 seconds
+    if spawn_timer >= random.randint(720, 1080):
         spawn_diamond()
         spawn_timer = 0
-    
     # Update bullets
     for bullet in bullets[:]:
-        bullet.y -= bullet.speed  # Bullets go toward the viewer (bottom)
+        bullet.y -= bullet.speed
         if bullet.y < -GRID_LENGTH:
             bullets.remove(bullet)
-    
     # Update diamonds
     for diamond in diamonds[:]:
-        diamond.y += 0.25  # Falling speed remains slow
+        diamond.y += 0.25
         diamond.rotation += 3
-        
-        # Remove diamonds that reach the UFO side (lower grid boundary)
         if diamond.y > GRID_LENGTH:
             diamonds.remove(diamond)
-    
+    # Bullet-diamond collision and scoring
+    for bullet in bullets[:]:
+        for diamond in diamonds[:]:
+            distance = ((bullet.x - diamond.x)**2 + (bullet.y - diamond.y)**2 + (bullet.z - diamond.z)**2)**0.5
+            if distance < 30:
+                bullets.remove(bullet)
+                diamonds.remove(diamond)
+                score += 2
+                break
     glutPostRedisplay()
 
 def showScreen():
@@ -344,7 +348,7 @@ def setupCamera():
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         # Pilot view: camera behind and above UFO, looking toward falling diamonds
-        gluLookAt(ufo_x, ufo_y + 60, ufo_z + 30,  # Camera closer and lower to UFO for better bullet visibility
+        gluLookAt(ufo_x, ufo_y + 120, ufo_z + 60,  # Camera behind and above UFO, facing diamonds
                   ufo_x, ufo_y - 100, ufo_z,      # Look toward falling diamonds
                   0, 0, 1)                        # Up vector
     else:
