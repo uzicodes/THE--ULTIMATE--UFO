@@ -248,6 +248,10 @@ def idle():
     for diamond in diamonds[:]:
         diamond.y += 0.25
         diamond.rotation += 3
+        # Remove diamonds that go under the grid (z <= 0 or z < 15)
+        if diamond.z <= 0 or diamond.z < 15 or diamond.z < 30:
+            diamonds.remove(diamond)
+            continue
         if diamond.y > GRID_LENGTH:
             diamonds.remove(diamond)
     # Bullet-diamond collision and scoring
