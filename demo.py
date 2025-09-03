@@ -378,12 +378,13 @@ def keyboardListener(key, x, y):
         camera_mode_3d = not camera_mode_3d
     # UFO stays at the bottom, only allow left/right movement
     moved = False
+    margin = 15  # Allow UFO to reach closer to grid edge
     if key == b'a':
-        if ufo_x < GRID_LENGTH - 100:
+        if ufo_x < GRID_LENGTH - margin:
             ufo_x += ufo_speed
             moved = True
     if key == b'd':
-        if ufo_x > -GRID_LENGTH + 100:
+        if ufo_x > -GRID_LENGTH + margin:
             ufo_x -= ufo_speed
             moved = True
     # Shoot bullet (Space key)
@@ -396,13 +397,14 @@ def specialKeyListener(key, x, y):
     Handles special key inputs (arrow keys) for UFO movement.
     """
     global ufo_x, ufo_y
+    margin = 15
     if game_over:
         return
     if key == GLUT_KEY_LEFT:
-        if ufo_x < GRID_LENGTH - 100:
+        if ufo_x < GRID_LENGTH - margin:
             ufo_x += ufo_speed
     if key == GLUT_KEY_RIGHT:
-        if ufo_x > -GRID_LENGTH + 100:
+        if ufo_x > -GRID_LENGTH + margin:
             ufo_x -= ufo_speed
 
 def mouseListener(button, state, x, y):
