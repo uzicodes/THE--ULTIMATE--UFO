@@ -27,12 +27,14 @@ camera_mode_3d = False  # Toggle between 2D overhead and 3D pilot view
 # Game objects
 bullets = []
 diamonds = []
+bombs = []  # New bombs list
 
 # Game state
 score = 0
 health = 100
 game_over = False
 spawn_timer = 0
+bomb_spawn_counter = 0  # Counter for bomb spawning ratio
 difficulty_level = 1
 level = 1  # Add level variable
 max_level = 20
@@ -53,6 +55,16 @@ class Diamond:
         self.y = y
         self.z = z
         self.speed = 0.7  # Much slower falling speed
+        self.rotation = 0
+        self.active = True
+
+# Bomb class
+class Bomb:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.speed = 0.7  # Same base speed as diamonds
         self.rotation = 0
         self.active = True
 
@@ -130,6 +142,61 @@ def draw_diamond(diamond):
     glVertex3f(-25, -18, 0) # front left
     glVertex3f(25, -18, 0)  # front right
     glEnd()
+    
+    glPopMatrix()
+
+def draw_bomb(bomb):
+    glPushMatrix()
+    glTranslatef(bomb.x, bomb.y, bomb.z)
+    glRotatef(bomb.rotation, 0, 0, 1)  # Rotate around z axis for bombs
+    
+    # Set bomb color - dark red/black
+    glColor3f(0.8, 0.1, 0.1)
+    
+    # Main bomb body (sphere)
+    glutSolidSphere(25, 10, 10)
+    
+    # Add some spikes/details to make it look dangerous
+    glColor3f(0.6, 0.0, 0.0)
+    
+    # Top spike
+    glPushMatrix()
+    glTranslatef(0, 0, 25)
+    glRotatef(-90, 1, 0, 0)
+    gluCylinder(gluNewQuadric(), 3, 0, 15, 6, 1)
+    glPopMatrix()
+    
+    # Bottom spike  
+    glPushMatrix()
+    glTranslatef(0, 0, -25)
+    glRotatef(90, 1, 0, 0)
+    gluCylinder(gluNewQuadric(), 3, 0, 15, 6, 1)
+    glPopMatrix()
+    
+    # Side spikes
+    glPushMatrix()
+    glTranslatef(25, 0, 0)
+    glRotatef(90, 0, 1, 0)
+    gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(-25, 0, 0)
+    glRotatef(-90, 0, 1, 0)
+    gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(0, 25, 0)
+    glRotatef(90, 1, 0, 0)
+    gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(0, -25, 0)
+    glRotatef(-90, 1, 0, 0)
+    gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
+    glPopMatrix()
     
     glPopMatrix()
 
@@ -234,24 +301,47 @@ def spawn_diamond():
     z = random.randint(15, 80)
     diamonds.append(Diamond(x, y, z))
 
+def spawn_bomb():
+    """Spawn a new bomb at random position from the entire top edge of the grid"""
+    # Random X position across the entire width of the grid
+    x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+    # Start from the top edge (far end)
+    y = -GRID_LENGTH + 20
+    # Random height for visual variety
+    z = random.randint(15, 80)
+    bombs.append(Bomb(x, y, z))
+
 def idle():
-    global spawn_timer, score, level, difficulty_level
+    global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, health, game_over
+    
     # Leveling system: update level based on score
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
-    # Spawn diamonds less frequently and slower for lower levels, faster for higher levels
+    
+    # Spawn diamonds and bombs with 5:1 ratio
     spawn_timer += 1
     spawn_interval = max(1500 - (level - 1) * 60, 300)  # Faster spawn for higher levels
+    
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
+        # Spawn diamond
         spawn_diamond()
+        bomb_spawn_counter += 1
+        
+        # Every 5th spawn, also spawn a bomb
+        if bomb_spawn_counter >= 5:
+            spawn_bomb()
+            bomb_spawn_counter = 0
+            
         spawn_timer = 0
+    
     # Update bullets
     for bullet in bullets[:]:
         bullet.y -= bullet.speed
         if bullet.y < -GRID_LENGTH:
             bullets.remove(bullet)
+    
     # Update diamonds
-    diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 1.0 per level
+    diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 0.1 per level
     for diamond in diamonds[:]:
         diamond.y += diamond_speed
         diamond.rotation += 3
@@ -260,6 +350,18 @@ def idle():
             continue
         if diamond.y > GRID_LENGTH:
             diamonds.remove(diamond)
+    
+    # Update bombs with same speed increase as diamonds
+    bomb_speed = 0.15 + (level - 1) * 0.1  # Same speed progression as diamonds
+    for bomb in bombs[:]:
+        bomb.y += bomb_speed
+        bomb.rotation += 2  # Slightly different rotation speed
+        if bomb.z < 30:
+            bombs.remove(bomb)
+            continue
+        if bomb.y > GRID_LENGTH:
+            bombs.remove(bomb)
+    
     # Bullet-diamond collision and scoring
     for bullet in bullets[:]:
         for diamond in diamonds[:]:
@@ -269,6 +371,30 @@ def idle():
                 diamonds.remove(diamond)
                 score += 2
                 break
+    
+    # Bullet-bomb collision and penalty
+    for bullet in bullets[:]:
+        for bomb in bombs[:]:
+            distance = ((bullet.x - bomb.x)**2 + (bullet.y - bomb.y)**2 + (bullet.z - bomb.z)**2)**0.5
+            if distance < 35:  # Slightly larger collision radius for bombs
+                bullets.remove(bullet)
+                bombs.remove(bomb)
+                score = max(0, score - 5)  # Penalty for shooting bombs
+                health = max(0, health - 10)  # Health penalty
+                if health <= 0:
+                    game_over = True
+                break
+    
+    # UFO-bomb collision (direct hit)
+    for bomb in bombs[:]:
+        ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
+        if ufo_distance < 50:  # UFO collision radius
+            bombs.remove(bomb)
+            health = max(0, health - 20)  # Major health penalty for direct hit
+            score = max(0, score - 10)  # Score penalty for direct hit
+            if health <= 0:
+                game_over = True
+    
     glutPostRedisplay()
 
 def showScreen():
@@ -329,6 +455,9 @@ def showScreen():
     for diamond in diamonds:
         draw_diamond(diamond)
     
+    for bomb in bombs:
+        draw_bomb(bomb)
+    
     # Draw UI
     camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
     draw_text(10, 770, f"Your Score: {score}")
@@ -336,6 +465,7 @@ def showScreen():
     draw_text(10, 710, f"Level: {level}")
     draw_text(10, 680, f"Camera: {camera_mode_text}")
     draw_text(10, 650, "Controls: WASD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
+    draw_text(10, 620, "WARNING: Avoid shooting bombs! They reduce health and score!")
     
     if game_over:
         draw_text(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT//2, "GAME OVER!")
@@ -370,7 +500,7 @@ def setupCamera():
         gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
 
 def keyboardListener(key, x, y):
-    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, camera_mode_3d
+    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter
     if game_over:
         if key == b'r':
             ufo_x = 0
@@ -379,9 +509,11 @@ def keyboardListener(key, x, y):
             health = 100
             game_over = False
             spawn_timer = 0
+            bomb_spawn_counter = 0
             difficulty_level = 1
             bullets.clear()
             diamonds.clear()
+            bombs.clear()
         return
     # Toggle camera mode with 'C' key
     if key == b'c':
