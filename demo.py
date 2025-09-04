@@ -390,7 +390,7 @@ def idle():
         ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
         if ufo_distance < 50:  # UFO collision radius
             bombs.remove(bomb)
-            health = max(0, health - 20)  # Major health penalty for direct hit
+            health = max(0, int(health * 0.9))  # Reduce health by 10% of current value
             score = max(0, score - 10)  # Score penalty for direct hit
             if health <= 0:
                 game_over = True
