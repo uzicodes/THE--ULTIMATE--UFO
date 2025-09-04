@@ -150,48 +150,40 @@ def draw_bomb(bomb):
     glTranslatef(bomb.x, bomb.y, bomb.z)
     glRotatef(bomb.rotation, 0, 0, 1)  # Rotate around z axis for bombs
     
-    # Set bomb color - dark red/black
-    glColor3f(0.8, 0.1, 0.1)
-    
+    # Set bomb color - pure black
+    glColor3f(0, 0, 0)
     # Main bomb body (sphere)
     glutSolidSphere(25, 10, 10)
-    
     # Add some spikes/details to make it look dangerous
-    glColor3f(0.6, 0.0, 0.0)
-    
+    glColor3f(0, 0, 0)
     # Top spike
     glPushMatrix()
     glTranslatef(0, 0, 25)
     glRotatef(-90, 1, 0, 0)
     gluCylinder(gluNewQuadric(), 3, 0, 15, 6, 1)
     glPopMatrix()
-    
     # Bottom spike  
     glPushMatrix()
     glTranslatef(0, 0, -25)
     glRotatef(90, 1, 0, 0)
     gluCylinder(gluNewQuadric(), 3, 0, 15, 6, 1)
     glPopMatrix()
-    
     # Side spikes
     glPushMatrix()
     glTranslatef(25, 0, 0)
     glRotatef(90, 0, 1, 0)
     gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
     glPopMatrix()
-    
     glPushMatrix()
     glTranslatef(-25, 0, 0)
     glRotatef(-90, 0, 1, 0)
     gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
     glPopMatrix()
-    
     glPushMatrix()
     glTranslatef(0, 25, 0)
     glRotatef(90, 1, 0, 0)
     gluCylinder(gluNewQuadric(), 2, 0, 10, 6, 1)
     glPopMatrix()
-    
     glPushMatrix()
     glTranslatef(0, -25, 0)
     glRotatef(-90, 1, 0, 0)
@@ -385,10 +377,23 @@ def idle():
                     game_over = True
                 break
     
-    # UFO-bomb collision (direct hit)
+    # UFO-bomb collision (direct hit or wing hit)
+    # Define wing positions relative to UFO
+    wing_offsets = [(-80, 0, 0), (80, 0, 0)]  # Left and right wings
+    wing_collision_radius = 50  # Same as UFO body for simplicity
     for bomb in bombs[:]:
+        # Check collision with UFO body
         ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
-        if ufo_distance < 50:  # UFO collision radius
+        wing_hit = False
+        for wx, wy, wz in wing_offsets:
+            wing_x = ufo_x + wx
+            wing_y = ufo_y + wy
+            wing_z = ufo_z + wz
+            wing_distance = ((wing_x - bomb.x)**2 + (wing_y - bomb.y)**2 + (wing_z - bomb.z)**2)**0.5
+            if wing_distance < wing_collision_radius:
+                wing_hit = True
+                break
+        if ufo_distance < 50 or wing_hit:
             bombs.remove(bomb)
             health = max(0, int(health * 0.9))  # Reduce health by 10% of current value
             score = max(0, score - 10)  # Score penalty for direct hit
