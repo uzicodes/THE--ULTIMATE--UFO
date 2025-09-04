@@ -236,7 +236,7 @@ def idle():
     global spawn_timer, score
     # Spawn diamonds even less frequently for level-1
     spawn_timer += 1
-    if spawn_timer >= random.randint(720, 1080):
+    if spawn_timer >= random.randint(900, 1500):  # Random spawn between 15-25 seconds
         spawn_diamond()
         spawn_timer = 0
     # Update bullets
@@ -246,10 +246,9 @@ def idle():
             bullets.remove(bullet)
     # Update diamonds
     for diamond in diamonds[:]:
-        diamond.y += 0.25
+        diamond.y += 0.15  # Lower falling speed for level-1
         diamond.rotation += 3
-        # Remove diamonds that go under the grid (z <= 0 or z < 15)
-        if diamond.z <= 0 or diamond.z < 15 or diamond.z < 30:
+        if diamond.z < 30:
             diamonds.remove(diamond)
             continue
         if diamond.y > GRID_LENGTH:
