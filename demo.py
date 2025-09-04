@@ -372,7 +372,7 @@ def idle():
                 bullets.remove(bullet)
                 bombs.remove(bomb)
                 score = max(0, score - 5)  # Penalty for shooting bombs
-                health = max(0, health - 10)  # Health penalty
+                health = max(0, health - 10)  # Health penalty (fixed 10 points)
                 if health <= 0:
                     game_over = True
                 break
@@ -395,7 +395,7 @@ def idle():
                 break
         if ufo_distance < 50 or wing_hit:
             bombs.remove(bomb)
-            health = max(0, int(health * 0.9))  # Reduce health by 10% of current value
+            health = max(0, health - 10)  # Reduce health by fixed 10 points
             score = max(0, score - 10)  # Score penalty for direct hit
             if health <= 0:
                 game_over = True
