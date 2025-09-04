@@ -34,6 +34,8 @@ health = 100
 game_over = False
 spawn_timer = 0
 difficulty_level = 1
+level = 1  # Add level variable
+max_level = 20
 
 # Bullet class
 class Bullet:
@@ -233,10 +235,14 @@ def spawn_diamond():
     diamonds.append(Diamond(x, y, z))
 
 def idle():
-    global spawn_timer, score
-    # Spawn diamonds even less frequently for level-1
+    global spawn_timer, score, level, difficulty_level
+    # Leveling system: update level based on score
+    level = min(max_level, score // 50 + 1)
+    difficulty_level = level
+    # Spawn diamonds less frequently and slower for lower levels, faster for higher levels
     spawn_timer += 1
-    if spawn_timer >= random.randint(900, 1500):  # Random spawn between 15-25 seconds
+    spawn_interval = max(1500 - (level - 1) * 60, 300)  # Faster spawn for higher levels
+    if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
         spawn_diamond()
         spawn_timer = 0
     # Update bullets
@@ -245,8 +251,9 @@ def idle():
         if bullet.y < -GRID_LENGTH:
             bullets.remove(bullet)
     # Update diamonds
+    diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 1.0 per level
     for diamond in diamonds[:]:
-        diamond.y += 0.15  # Lower falling speed for level-1
+        diamond.y += diamond_speed
         diamond.rotation += 3
         if diamond.z < 30:
             diamonds.remove(diamond)
@@ -326,7 +333,7 @@ def showScreen():
     camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
     draw_text(10, 770, f"Your Score: {score}")
     draw_text(10, 740, f"Health: {health}%")
-    draw_text(10, 710, f"Level: {difficulty_level}")
+    draw_text(10, 710, f"Level: {level}")
     draw_text(10, 680, f"Camera: {camera_mode_text}")
     draw_text(10, 650, "Controls: WASD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
     
