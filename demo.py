@@ -464,8 +464,8 @@ def showScreen():
     draw_text(10, 740, f"Health: {health}%")
     draw_text(10, 710, f"Level: {level}")
     draw_text(10, 680, f"Camera: {camera_mode_text}")
-    draw_text(10, 650, "Controls: WASD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
-    draw_text(10, 620, "WARNING: Avoid shooting bombs! They reduce health and score!")
+    draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
+    draw_text(10, 620, "WARNING: Avoid shooting bombs!")
     
     if game_over:
         draw_text(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT//2, "GAME OVER!")
