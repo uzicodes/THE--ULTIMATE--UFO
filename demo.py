@@ -28,6 +28,7 @@ camera_mode_3d = False  # Toggle between 2D overhead and 3D pilot view
 bullets = []
 diamonds = []
 bombs = []  # New bombs list
+hearts = []  # New hearts list
 
 # Game state
 score = 0
@@ -35,6 +36,7 @@ health = 100
 game_over = False
 spawn_timer = 0
 bomb_spawn_counter = 0  # Counter for bomb spawning ratio
+heart_spawn_counter = 0  # Counter for heart spawning ratio
 difficulty_level = 1
 level = 1  # Add level variable
 max_level = 20
@@ -65,6 +67,16 @@ class Bomb:
         self.y = y
         self.z = z
         self.speed = 0.7  # Same base speed as diamonds
+        self.rotation = 0
+        self.active = True
+
+# Heart class
+class Heart:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.speed = 0.7  # Same as diamonds and bombs
         self.rotation = 0
         self.active = True
 
@@ -283,6 +295,15 @@ def draw_bullet(bullet):
     glutSolidSphere(6, 8, 8)  # Bigger bullet size (increased from 3 to 6)
     glPopMatrix()
 
+def draw_heart(heart):
+    glPushMatrix()
+    glTranslatef(heart.x, heart.y, heart.z)
+    glRotatef(heart.rotation, 0, 0, 1)
+    glColor3f(1, 0, 0)  # Red color
+    # Draw heart as a 3D red sphere (circular heart)
+    glutSolidSphere(15, 16, 16)
+    glPopMatrix()
+
 def spawn_diamond():
     """Spawn a new diamond at random position from the entire top edge of the grid"""
     # Random X position across the entire width of the grid
@@ -303,27 +324,38 @@ def spawn_bomb():
     z = random.randint(15, 80)
     bombs.append(Bomb(x, y, z))
 
+def spawn_heart():
+    """Spawn a new heart at random position from the entire top edge of the grid"""
+    # Random X position across the entire width of the grid
+    x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+    # Start from the top edge (far end)
+    y = -GRID_LENGTH + 20
+    # Random height for visual variety
+    z = random.randint(15, 80)
+    hearts.append(Heart(x, y, z))
+
 def idle():
-    global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, health, game_over
+    global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
     
     # Leveling system: update level based on score
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
     
-    # Spawn diamonds and bombs with 5:1 ratio
+    # Spawn diamonds, bombs, and hearts
     spawn_timer += 1
-    spawn_interval = max(1500 - (level - 1) * 60, 300)  # Faster spawn for higher levels
-    
+    spawn_interval = max(1500 - (level - 1) * 60, 300)
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
-        # Spawn diamond
         spawn_diamond()
         bomb_spawn_counter += 1
-        
+        heart_spawn_counter += 1
         # Every 5th spawn, also spawn a bomb
         if bomb_spawn_counter >= 5:
             spawn_bomb()
             bomb_spawn_counter = 0
-            
+        # Every 10th spawn, also spawn a heart
+        if heart_spawn_counter >= 10:
+            spawn_heart()
+            heart_spawn_counter = 0
         spawn_timer = 0
     
     # Update bullets
@@ -354,6 +386,17 @@ def idle():
         if bomb.y > GRID_LENGTH:
             bombs.remove(bomb)
     
+    # Update hearts with same speed increase as diamonds and bombs
+    heart_speed = 0.15 + (level - 1) * 0.1
+    for heart in hearts[:]:
+        heart.y += heart_speed
+        heart.rotation += 2
+        if heart.z < 30:
+            hearts.remove(heart)
+            continue
+        if heart.y > GRID_LENGTH:
+            hearts.remove(heart)
+    
     # Bullet-diamond collision and scoring
     for bullet in bullets[:]:
         for diamond in diamonds[:]:
@@ -375,6 +418,27 @@ def idle():
                 health = max(0, health - 10)  # Health penalty (fixed 10 points)
                 if health <= 0:
                     game_over = True
+                break
+    
+    # Bullet-heart collision and scoring
+    for bullet in bullets[:]:
+        for heart in hearts[:]:
+            distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
+            if distance < 25:  # Smaller collision radius for hearts
+                bullets.remove(bullet)
+                hearts.remove(heart)
+                score += 5  # Higher score for collecting hearts
+                health = min(100, health + 10)  # Heal for collecting hearts, up to 100%
+                break
+    
+    # Bullet-heart collision and health gain
+    for bullet in bullets[:]:
+        for heart in hearts[:]:
+            distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
+            if distance < 30:
+                bullets.remove(bullet)
+                hearts.remove(heart)
+                health = min(100, health + 10)  # Gain 10 health, max 100
                 break
     
     # UFO-bomb collision (direct hit or wing hit)
@@ -399,6 +463,23 @@ def idle():
             score = max(0, score - 10)  # Score penalty for direct hit
             if health <= 0:
                 game_over = True
+    
+    # UFO-heart collision (direct hit or wing hit)
+    for heart in hearts[:]:
+        ufo_distance = ((ufo_x - heart.x)**2 + (ufo_y - heart.y)**2 + (ufo_z - heart.z)**2)**0.5
+        wing_hit = False
+        for wx, wy, wz in wing_offsets:
+            wing_x = ufo_x + wx
+            wing_y = ufo_y + wy
+            wing_z = ufo_z + wz
+            wing_distance = ((wing_x - heart.x)**2 + (wing_y - heart.y)**2 + (wing_z - heart.z)**2)**0.5
+            if wing_distance < wing_collision_radius:
+                wing_hit = True
+                break
+        if ufo_distance < 50 or wing_hit:
+            hearts.remove(heart)
+            health = min(100, health + 10)  # Gain 10 health, max 100
+            break
     
     glutPostRedisplay()
 
@@ -462,6 +543,9 @@ def showScreen():
     
     for bomb in bombs:
         draw_bomb(bomb)
+    
+    for heart in hearts:
+        draw_heart(heart)
     
     # Draw UI
     camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
