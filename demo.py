@@ -30,6 +30,12 @@ diamonds = []
 bombs = []  # New bombs list
 hearts = []  # New hearts list
 
+# Boss State
+boss= None
+boss_active= False
+enemy_bullets=[]
+last_boos_level=0
+
 # Game state
 score = 0
 health = 100
@@ -68,7 +74,7 @@ class Bomb:
         self.z = z
         self.speed = 0.7  # Same base speed as diamonds
         self.rotation = 0
-        # self.active = True
+        self.active = True
 
 # Heart class
 class Heart:
@@ -79,6 +85,38 @@ class Heart:
         self.speed = 0.7  # Same as diamonds and bombs
         self.rotation = 0
         self.active = True
+
+#Boss Class
+class EnemyBullet:
+    """Downward-moving projectile fired by the boss."""
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.speed = 8
+        self.active = True
+
+class Boss:
+    def __init__(self, level):
+        self.level = level
+        self.health = 100 + (level - 1) * 50  # Boss health increases with level
+        self.x = 0
+        self.y = -GRID_LENGTH + 50
+        self.z = 50
+        self.width = 100
+        self.height = 50
+        self.bullets = []
+
+        # Boss movement speed scales with level
+        self.base_speed = 1
+        self.speed = self.base_speed + 0.2 * (level - 1)
+        self.direction = 1
+        self.shoot_timer = 0
+
+        # Boss damage scales with level
+        self.base_damage = 10  # starting damage
+        self.damage = self.base_damage + 2 * (level - 1)
+
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glColor3f(1, 1, 1)
@@ -288,6 +326,8 @@ def draw_ufo():
     
     glPopMatrix()
 
+
+
 def draw_bullet(bullet):
     glPushMatrix()
     glTranslatef(bullet.x, bullet.y, bullet.z)
@@ -303,6 +343,31 @@ def draw_heart(heart):
     # Draw heart as a 3D red sphere (circular heart)
     glutSolidSphere(15, 16, 16)
     glPopMatrix()
+
+def draw_enemy_bullet(b):
+    glPushMatrix()
+    glTranslatef(b.x, b.y, b.z)
+    glColor3f(1, 0.3, 0.3)  # reddish bullets from boss
+    glutSolidSphere(6, 8, 8)
+    glPopMatrix()
+
+def draw_boss(b):
+    glPushMatrix()
+    glTranslatef(b.x, b.y, b.z)
+    glRotatef(b.rotation, 0, 0, 1)
+    # Big saucer base
+    glColor3f(0.9, 0.2, 0.2)
+    glPushMatrix()
+    glScalef(1.8, 1.8, 0.5)
+    gluSphere(gluNewQuadric(), 80, 20, 12)
+    glPopMatrix()
+    # Dome
+    glColor3f(0.95, 0.5, 0.5)
+    glPushMatrix()
+    glTranslatef(0, 0, 45)
+    gluSphere(gluNewQuadric(), 40, 16, 10)
+    glPopMatrix()
+    glPopMatrix()    
 
 def spawn_diamond():
     """Spawn a new diamond at random position from the entire top edge of the grid"""
@@ -336,6 +401,7 @@ def spawn_heart():
 
 def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
+    global boss_active, boss, enemy_bullets
     
     # Leveling system: update level based on score
     level = min(max_level, score // 50 + 1)
@@ -345,17 +411,27 @@ def idle():
     spawn_timer += 1
     spawn_interval = max(1500 - (level - 1) * 60, 300)
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
-        spawn_diamond()
+        # Spawn more diamonds per level
+        num_diamonds = 1 + level // 2  # Increase diamonds with level
+        for _ in range(num_diamonds):
+            spawn_diamond()
+        
+        # Bombs every 5 spawns
         bomb_spawn_counter += 1
         heart_spawn_counter += 1
         # Every 5th spawn, also spawn a bomb
         if bomb_spawn_counter >= 5:
             spawn_bomb()
             bomb_spawn_counter = 0
-        # Every 10th spawn, also spawn a heart
+        
+        # Hearts every 10 spawns
+        heart_spawn_counter += 1
         if heart_spawn_counter >= 10:
-            spawn_heart()
+            num_hearts = 1 + level // 4  # Increase hearts slightly with level
+            for _ in range(num_hearts):
+                spawn_heart()
             heart_spawn_counter = 0
+        
         spawn_timer = 0
     
     # Update bullets
@@ -365,39 +441,30 @@ def idle():
             bullets.remove(bullet)
     
     # Update diamonds
-    diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 0.1 per level
+    diamond_speed = 0.3 + (level - 1) * 0.15  # Increased speed
     for diamond in diamonds[:]:
         diamond.y += diamond_speed
         diamond.rotation += 3
-        if diamond.z < 30:
-            diamonds.remove(diamond)
-            continue
-        if diamond.y > GRID_LENGTH:
+        if diamond.z < 30 or diamond.y > GRID_LENGTH:
             diamonds.remove(diamond)
     
-    # Update bombs with same speed increase as diamonds
-    bomb_speed = 0.15 + (level - 1) * 0.1  # Same speed progression as diamonds
+    # Update bombs
+    bomb_speed = 0.25 + (level - 1) * 0.12
     for bomb in bombs[:]:
         bomb.y += bomb_speed
-        bomb.rotation += 2  # Slightly different rotation speed
-        if bomb.z < 30:
-            bombs.remove(bomb)
-            continue
-        if bomb.y > GRID_LENGTH:
+        bomb.rotation += 2
+        if bomb.z < 30 or bomb.y > GRID_LENGTH:
             bombs.remove(bomb)
     
-    # Update hearts with same speed increase as diamonds and bombs
-    heart_speed = 0.15 + (level - 1) * 0.1
+    # Update hearts
+    heart_speed = 0.2 + (level - 1) * 0.1
     for heart in hearts[:]:
         heart.y += heart_speed
         heart.rotation += 2
-        if heart.z < 30:
-            hearts.remove(heart)
-            continue
-        if heart.y > GRID_LENGTH:
+        if heart.z < 30 or heart.y > GRID_LENGTH:
             hearts.remove(heart)
     
-    # Bullet-diamond collision and scoring
+    # Bullet-diamond collision
     for bullet in bullets[:]:
         for diamond in diamonds[:]:
             distance = ((bullet.x - diamond.x)**2 + (bullet.y - diamond.y)**2 + (bullet.z - diamond.z)**2)**0.5
@@ -407,44 +474,33 @@ def idle():
                 score += 2
                 break
     
-    # Bullet-bomb collision and penalty
+    # Bullet-bomb collision
     for bullet in bullets[:]:
         for bomb in bombs[:]:
             distance = ((bullet.x - bomb.x)**2 + (bullet.y - bomb.y)**2 + (bullet.z - bomb.z)**2)**0.5
-            if distance < 35:  # Slightly larger collision radius for bombs
+            if distance < 35:
                 bullets.remove(bullet)
                 bombs.remove(bomb)
-                score = max(0, score - 5)  # Penalty for shooting bombs
-                health = max(0, health - 10)  # Health penalty (fixed 10 points)
+                score = max(0, score - 5)
+                health = max(0, health - 10)
                 if health <= 0:
                     game_over = True
                 break
     
-    # Bullet-heart collision and scoring
+    # Bullet-heart collision
     for bullet in bullets[:]:
         for heart in hearts[:]:
             distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
-            if distance < 25:  # Smaller collision radius for hearts
+            if distance < 25:
                 bullets.remove(bullet)
                 hearts.remove(heart)
-                score += 5  # Higher score for collecting hearts
-                health = min(100, health + 10)  # Heal for collecting hearts, up to 100%
+                score += 5
+                health = min(100, health + 10)
                 break
     
-    # Bullet-heart collision and health gain
-    for bullet in bullets[:]:
-        for heart in hearts[:]:
-            distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
-            if distance < 30:
-                bullets.remove(bullet)
-                hearts.remove(heart)
-                health = min(100, health + 10)  # Gain 10 health, max 100
-                break
-    
-    # UFO-bomb collision (direct hit or wing hit)
-    # Define wing positions relative to UFO
-    wing_offsets = [(-80, 0, 0), (80, 0, 0)]  # Left and right wings
-    wing_collision_radius = 50  # Same as UFO body for simplicity
+    # UFO-bomb collision
+    wing_offsets = [(-80, 0, 0), (80, 0, 0)]
+    wing_collision_radius = 50
     for bomb in bombs[:]:
         # Check collision with UFO body
         ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
@@ -459,12 +515,12 @@ def idle():
                 break
         if ufo_distance < 50 or wing_hit:
             bombs.remove(bomb)
-            health = max(0, health - 10)  # Reduce health by fixed 10 points
-            score = max(0, score - 10)  # Score penalty for direct hit
+            health = max(0, health - 10)
+            score = max(0, score - 10)
             if health <= 0:
                 game_over = True
     
-    # UFO-heart collision (direct hit or wing hit)
+    # UFO-heart collision
     for heart in hearts[:]:
         ufo_distance = ((ufo_x - heart.x)**2 + (ufo_y - heart.y)**2 + (ufo_z - heart.z)**2)**0.5
         wing_hit = False
@@ -478,10 +534,27 @@ def idle():
                 break
         if ufo_distance < 50 or wing_hit:
             hearts.remove(heart)
-            health = min(100, health + 10)  # Gain 10 health, max 100
+            health = min(100, health + 10)
             break
     
+    # Boss logic (if boss is active)
+    if boss_active:
+        boss.update(ufo_x, ufo_y, level)
+        for e_bullet in enemy_bullets[:]:
+            e_bullet.y -= e_bullet.speed
+            if e_bullet.y < -GRID_LENGTH:
+                enemy_bullets.remove(e_bullet)
+            # Collision with UFO
+            distance = ((e_bullet.x - ufo_x)**2 + (e_bullet.y - ufo_y)**2 + (e_bullet.z - ufo_z)**2)**0.5
+            if distance < 50:
+                health = max(0, health - boss.damage)
+                enemy_bullets.remove(e_bullet)
+                if health <= 0:
+                    game_over = True
+    
     glutPostRedisplay()
+
+
 
 def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -547,6 +620,12 @@ def showScreen():
     for heart in hearts:
         draw_heart(heart)
     
+    # Draw Boss and Enenmy Bullet
+    if boss_active and boss is not None:
+        draw_boss(boss)
+    for eb in enemy_bullets:
+        draw_enemy_bullet(eb)
+    
     # Draw UI
     camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
     draw_text(10, 770, f"Your Score: {score}")
@@ -556,6 +635,10 @@ def showScreen():
     draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
     draw_text(10, 620, "WARNING: Avoid shooting bombs!")
     
+     # Boss HP readout (NEW)
+    if boss_active and boss is not None:
+        draw_text(10, 590, f"Boss HP: {boss.health}/{boss.max_health}")
+
     if game_over:
         draw_text(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT//2, "GAME OVER!")
         draw_text(WINDOW_WIDTH//2 - 120, WINDOW_HEIGHT//2 - 30, f"Final Score: {score}")
@@ -590,6 +673,9 @@ def setupCamera():
 
 def keyboardListener(key, x, y):
     global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter
+    # NEW globals needed here for restart:
+    global boss_active, boss, enemy_bullets, last_boss_level
+
     if game_over:
         if key == b'r':
             ufo_x = 0
@@ -603,6 +689,11 @@ def keyboardListener(key, x, y):
             bullets.clear()
             diamonds.clear()
             bombs.clear()
+            # reset boss system (NEW)
+            boss_active = False
+            boss = None
+            enemy_bullets.clear()
+            last_boss_level = 0
         return
     # Toggle camera mode with 'C' key
     if key == b'c':
