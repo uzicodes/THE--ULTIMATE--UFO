@@ -609,7 +609,25 @@ def shoot_bullets():
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
 
 def idle():
-    global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
+    # ...existing code...
+    # Place UFO-bomb and UFO-heart collision logic here, after global declarations
+    global health, game_over
+    # UFO-bomb collision: decrease health by 10% for each bomb hit
+    for bomb in bombs[:]:
+        ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
+        if ufo_distance < 50:  # Adjust radius as needed for your UFO/bomb size
+            bombs.remove(bomb)
+            health = max(0, health - 10)
+            if health <= 0:
+                game_over = True
+
+    # UFO-heart collision: increase health by 10% for each heart collected
+    for heart in hearts[:]:
+        ufo_distance = ((ufo_x - heart.x)**2 + (ufo_y - heart.y)**2 + (ufo_z - heart.z)**2)**0.5
+        if ufo_distance < 50:  # Adjust radius as needed for your UFO/heart size
+            hearts.remove(heart)
+            health = min(100, health + 10)
+    global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter
     global four_x_active, four_x_timer, diamond_spawn_counter, four_x_start_time
     global boss_active, boss_spawned_this_level, boss_next_spawn_score
     global boss_health, boss_x, boss_y, boss_z, boss_shoot_timer, boss_shoot_interval
@@ -889,6 +907,8 @@ def showScreen():
     for gift in gifts:
         draw_gift(gift)
     
+
+
     # Draw UI
     camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
     draw_text(10, 770, f"Your Score: {score}")
@@ -908,7 +928,9 @@ def showScreen():
         draw_text(10, 620, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot (4X!), C to toggle camera")
     else:
         draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
-        draw_text(10, 620, f"Diamonds spawned: {diamond_spawn_counter} (4X gift every 30)")
+        pass  # No diamond_spawn_counter print here
+    
+    
     
     draw_text(10, 590, "WARNING: Avoid shooting bombs! Collect golden gifts for 4X shooting!")
     
