@@ -74,12 +74,13 @@ class Bullet:
 
 # Boss Bullet class
 class BossBullet:
-    def __init__(self, x, y, z, target_x):
+    def __init__(self, x, y, z, dx, dy, dz):
         self.x = x
         self.y = y
         self.z = z
-        self.speed = 15
-        self.target_x = target_x  # Where the boss is aiming
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz
         self.active = True
 
 # Diamond class
@@ -269,6 +270,29 @@ def update_boss():
     elif boss_x > ufo_x:
         boss_x = max(boss_x - ufo_speed, ufo_x)
     # Boss stays at fixed Y (opposite of UFO) and fixed Z
+
+def boss_shoots_at_ufo():
+    # Calculate direction from boss to UFO
+    dir_x = ufo_x - boss_x
+    dir_y = ufo_y - boss_y
+    dir_z = ufo_z - boss_z
+    length = math.sqrt(dir_x**2 + dir_y**2 + dir_z**2)
+    if length == 0:
+        length = 1  # Prevent division by zero
+    speed = 12  # Boss bullet speed
+    dx = dir_x / length * speed
+    dy = dir_y / length * speed
+    dz = dir_z / length * speed
+    boss_bullets.append(BossBullet(boss_x, boss_y, boss_z, dx, dy, dz))
+
+def update_boss_bullets():
+    for bullet in boss_bullets[:]:
+        bullet.x += bullet.dx
+        bullet.y += bullet.dy
+        bullet.z += bullet.dz
+        # Remove if out of bounds
+        if (abs(bullet.x) > GRID_LENGTH + 100 or abs(bullet.y) > GRID_LENGTH + 100 or bullet.z < 0 or bullet.z > WINDOW_HEIGHT):
+            boss_bullets.remove(bullet)
 
 def draw_diamond(diamond):
     glPushMatrix()
