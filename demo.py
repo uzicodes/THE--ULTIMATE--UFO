@@ -846,6 +846,22 @@ def idle():
             score += 10  # Bonus score for getting the power-up
             break
     
+    # Bullet-boss collision and health reduction
+    for bullet in bullets[:]:
+        if boss_active:
+            # Calculate distance to boss center (adjust as needed for hitbox)
+            distance = ((bullet.x - boss_x)**2 + (bullet.y - boss_y)**2 + (bullet.z - boss_z)**2)**0.5
+            if distance < 60:  # Boss hitbox radius
+                bullets.remove(bullet)
+                damage_percent = get_boss_damage_percent(level)
+                boss_health -= int(boss_health * damage_percent)
+                score += 5
+                if boss_health <= 0:
+                    boss_active = False
+                    score += 100  # Bonus for defeating boss
+                    boss_health = 100  # Reset for next boss
+                break
+    
     glutPostRedisplay()
 
 def showScreen():
@@ -1043,6 +1059,19 @@ def mouseListener(button, state, x, y):
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN and not game_over:
         # Fire bullets using the new shooting system
         shoot_bullets()
+
+def get_boss_damage_percent(level):
+    if 2 <= level <= 5:
+        return 0.25
+    elif 6 <= level <= 10:
+        return 0.20
+    elif 11 <= level <= 15:
+        return 0.15
+    elif 16 <= level <= 19:
+        return 0.10
+    elif level == 20:
+        return 0.05
+    return 0.25  # Default for safety
 
 def main():
     glutInit()
