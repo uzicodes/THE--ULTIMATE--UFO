@@ -586,6 +586,7 @@ def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
     global four_x_active, four_x_timer, diamond_spawn_counter, four_x_start_time
     global boss_active, boss_spawned_this_level, boss_next_spawn_score
+    global boss_health, boss_x, boss_y, boss_z
     
     # Update 4x shooting timer
     if four_x_active:
