@@ -29,6 +29,7 @@ bullets = []
 diamonds = []
 bombs = []  # New bombs list
 hearts = []  # New hearts list
+gifts = []  # New 4x shooting gifts list
 
 # Game state
 score = 0
@@ -37,9 +38,15 @@ game_over = False
 spawn_timer = 0
 bomb_spawn_counter = 0  # Counter for bomb spawning ratio
 heart_spawn_counter = 0  # Counter for heart spawning ratio
+diamond_spawn_counter = 0  # Counter for diamonds spawned
 difficulty_level = 1
 level = 1  # Add level variable
 max_level = 20
+
+# 4x Shooting power-up variables
+four_x_active = False
+four_x_timer = 0
+four_x_duration = 10000  # 10 seconds in milliseconds (approximate)
 
 # Bullet class
 class Bullet:
@@ -77,6 +84,16 @@ class Heart:
         self.y = y
         self.z = z
         self.speed = 0.7  # Same as diamonds and bombs
+        self.rotation = 0
+        self.active = True
+
+# Gift class for 4x shooting power-up
+class Gift:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.speed = 0.7  # Same as other objects
         self.rotation = 0
         self.active = True
 
@@ -204,6 +221,50 @@ def draw_bomb(bomb):
     
     glPopMatrix()
 
+def draw_gift(gift):
+    glPushMatrix()
+    glTranslatef(gift.x, gift.y, gift.z)
+    glRotatef(gift.rotation, 1, 1, 1)  # Rotate around all axes for a spinning effect
+    
+    # Main gift box - golden color
+    glColor3f(1, 0.8, 0)  # Gold color
+    glutSolidCube(30)
+    
+    # Gift ribbon - red color
+    glColor3f(1, 0, 0)  # Red color
+    
+    # Horizontal ribbon
+    glPushMatrix()
+    glScalef(1.1, 0.1, 0.1)
+    glutSolidCube(30)
+    glPopMatrix()
+    
+    # Vertical ribbon
+    glPushMatrix()
+    glScalef(0.1, 1.1, 0.1)
+    glutSolidCube(30)
+    glPopMatrix()
+    
+    # Bow on top
+    glPushMatrix()
+    glTranslatef(0, 0, 20)
+    glColor3f(0.8, 0, 0)  # Darker red for bow
+    glutSolidSphere(8, 8, 8)
+    glPopMatrix()
+    
+    # "4X" text indicator - draw small cubes to represent 4X
+    glColor3f(1, 1, 0)  # Yellow for visibility
+    
+    # Draw small indicator cubes around the gift
+    positions = [(-20, -20, 0), (20, -20, 0), (-20, 20, 0), (20, 20, 0)]
+    for px, py, pz in positions:
+        glPushMatrix()
+        glTranslatef(px, py, pz)
+        glutSolidCube(4)
+        glPopMatrix()
+    
+    glPopMatrix()
+
 def draw_ufo():
     glPushMatrix()
     glTranslatef(ufo_x, ufo_y, ufo_z)
@@ -240,9 +301,13 @@ def draw_ufo():
     glPopMatrix()
     
     # Small rectangular details on wings (yellow boxes from sketch)
-    glColor3f(1, 1, 0)
+    # If 4x shooting is active, make them glow brighter
+    if four_x_active:
+        glColor3f(1, 1, 0.2)  # Brighter yellow when 4x is active
+    else:
+        glColor3f(1, 1, 0)
     
-    # Left wing details
+    # Left wing details (wing shooters)
     glPushMatrix()
     glTranslatef(-100, 15, 5)
     glutSolidCube(8)
@@ -253,7 +318,7 @@ def draw_ufo():
     glutSolidCube(8)
     glPopMatrix()
     
-    # Right wing details
+    # Right wing details (wing shooters)
     glPushMatrix()
     glTranslatef(100, 15, 5)
     glutSolidCube(8)
@@ -264,7 +329,7 @@ def draw_ufo():
     glutSolidCube(8)
     glPopMatrix()
     
-    # Central details
+    # Central details (head shooters)
     glPushMatrix()
     glTranslatef(-15, 40, 5)
     glutSolidCube(10)
@@ -305,19 +370,21 @@ def draw_heart(heart):
     glPopMatrix()
 
 def is_spawn_position_clear(x, y, z, min_dist=60):
-    for obj in diamonds + bombs + hearts:
+    for obj in diamonds + bombs + hearts + gifts:
         dist = ((x - obj.x)**2 + (y - obj.y)**2 + (z - obj.z)**2)**0.5
         if dist < min_dist:
             return False
     return True
 
 def spawn_diamond():
+    global diamond_spawn_counter
     for _ in range(10):  # Try up to 10 times to find a clear spot
         x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
         y = -GRID_LENGTH + 20
         z = random.randint(15, 80)
         if is_spawn_position_clear(x, y, z):
             diamonds.append(Diamond(x, y, z))
+            diamond_spawn_counter += 1
             return
 
 def spawn_bomb():
@@ -338,20 +405,57 @@ def spawn_heart():
             hearts.append(Heart(x, y, z))
             return
 
+def spawn_gift():
+    for _ in range(10):
+        x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+        y = -GRID_LENGTH + 20
+        z = random.randint(15, 80)
+        if is_spawn_position_clear(x, y, z):
+            gifts.append(Gift(x, y, z))
+            return
+
+def shoot_bullets():
+    """Shoot bullets based on current power-up state"""
+    if four_x_active:
+        # Shoot from all 4 positions: 2 head shooters + 2 wing shooters
+        # Head shooters (front of UFO)
+        bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
+        bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
+        # Wing shooters (left and right wings) - positioned at wing locations
+        bullets.append(Bullet(ufo_x - 100, ufo_y + 15, ufo_z + 5))  # Left wing shooter
+        bullets.append(Bullet(ufo_x + 100, ufo_y + 15, ufo_z + 5))  # Right wing shooter
+    else:
+        # Normal shooting: only head shooters
+        bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
+        bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
+
 def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
+    global four_x_active, four_x_timer, diamond_spawn_counter
+    
+    # Update 4x shooting timer
+    if four_x_active:
+        four_x_timer += 16  # Approximate time increment (16ms per frame)
+        if four_x_timer >= four_x_duration:
+            four_x_active = False
+            four_x_timer = 0
     
     # Leveling system: update level based on score
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
     
-    # Spawn diamonds, bombs, and hearts
+    # Spawn diamonds, bombs, hearts, and gifts
     spawn_timer += 1
     spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels & more frequent diamonds
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
         spawn_diamond()
         bomb_spawn_counter += 1
         heart_spawn_counter += 1
+        
+        # Every 30th diamond, spawn a gift (4x power-up)
+        if diamond_spawn_counter % 30 == 0 and diamond_spawn_counter > 0:
+            spawn_gift()
+        
         # Every 5th spawn, also spawn a bomb
         if bomb_spawn_counter >= 5:
             spawn_bomb()
@@ -401,6 +505,17 @@ def idle():
         if heart.y > GRID_LENGTH:
             hearts.remove(heart)
     
+    # Update gifts with same speed as other objects
+    gift_speed = 0.15 + (level - 1) * 0.1
+    for gift in gifts[:]:
+        gift.y += gift_speed
+        gift.rotation += 4  # Faster rotation for gifts to make them more noticeable
+        if gift.z < 30:
+            gifts.remove(gift)
+            continue
+        if gift.y > GRID_LENGTH:
+            gifts.remove(gift)
+    
     # Bullet-diamond collision and scoring
     for bullet in bullets[:]:
         for diamond in diamonds[:]:
@@ -435,14 +550,16 @@ def idle():
                 health = min(100, health + 10)  # Heal for collecting hearts, up to 100%
                 break
     
-    # Bullet-heart collision and health gain
+    # Bullet-gift collision (activate 4x shooting)
     for bullet in bullets[:]:
-        for heart in hearts[:]:
-            distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
-            if distance < 30:
+        for gift in gifts[:]:
+            distance = ((bullet.x - gift.x)**2 + (bullet.y - gift.y)**2 + (gift.z - gift.z)**2)**0.5
+            if distance < 35:
                 bullets.remove(bullet)
-                hearts.remove(heart)
-                health = min(100, health + 10)  # Gain 10 health, max 100
+                gifts.remove(gift)
+                four_x_active = True
+                four_x_timer = 0
+                score += 10  # Bonus score for getting the power-up
                 break
     
     # UFO-bomb collision (direct hit or wing hit)
@@ -483,6 +600,25 @@ def idle():
         if ufo_distance < 50 or wing_hit:
             hearts.remove(heart)
             health = min(100, health + 10)  # Gain 10 health, max 100
+            break
+    
+    # UFO-gift collision (direct hit or wing hit) - activate 4x shooting
+    for gift in gifts[:]:
+        ufo_distance = ((ufo_x - gift.x)**2 + (ufo_y - gift.y)**2 + (ufo_z - gift.z)**2)**0.5
+        wing_hit = False
+        for wx, wy, wz in wing_offsets:
+            wing_x = ufo_x + wx
+            wing_y = ufo_y + wy
+            wing_z = ufo_z + wz
+            wing_distance = ((wing_x - gift.x)**2 + (wing_y - gift.y)**2 + (wing_z - gift.z)**2)**0.5
+            if wing_distance < wing_collision_radius:
+                wing_hit = True
+                break
+        if ufo_distance < 50 or wing_hit:
+            gifts.remove(gift)
+            four_x_active = True
+            four_x_timer = 0
+            score += 10  # Bonus score for getting the power-up
             break
     
     glutPostRedisplay()
@@ -551,14 +687,26 @@ def showScreen():
     for heart in hearts:
         draw_heart(heart)
     
+    for gift in gifts:
+        draw_gift(gift)
+    
     # Draw UI
     camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
     draw_text(10, 770, f"Your Score: {score}")
     draw_text(10, 740, f"Health: {health}%")
     draw_text(10, 710, f"Level: {level}")
     draw_text(10, 680, f"Camera: {camera_mode_text}")
-    draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
-    draw_text(10, 620, "WARNING: Avoid shooting bombs!")
+    
+    # 4x shooting status
+    if four_x_active:
+        remaining_time = max(0, (four_x_duration - four_x_timer) // 1000)
+        draw_text(10, 650, f"4X SHOOTING ACTIVE! Time: {remaining_time}s")
+        draw_text(10, 620, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot (4X!), C to toggle camera")
+    else:
+        draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
+        draw_text(10, 620, f"Diamonds spawned: {diamond_spawn_counter} (4X gift every 30)")
+    
+    draw_text(10, 590, "WARNING: Avoid shooting bombs! Collect golden gifts for 4X shooting!")
     
     if game_over:
         draw_text(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT//2, "GAME OVER!")
@@ -593,7 +741,7 @@ def setupCamera():
         gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
 
 def keyboardListener(key, x, y):
-    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter
+    global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter, diamond_spawn_counter, four_x_active, four_x_timer, hearts, gifts
     if game_over:
         if key == b'r':
             ufo_x = 0
@@ -603,10 +751,15 @@ def keyboardListener(key, x, y):
             game_over = False
             spawn_timer = 0
             bomb_spawn_counter = 0
+            diamond_spawn_counter = 0
             difficulty_level = 1
+            four_x_active = False
+            four_x_timer = 0
             bullets.clear()
             diamonds.clear()
             bombs.clear()
+            hearts.clear()
+            gifts.clear()
         return
     # Toggle camera mode with 'C' key
     if key == b'c':
@@ -624,8 +777,7 @@ def keyboardListener(key, x, y):
             moved = True
     # Shoot bullet (Space key)
     if key == b' ':
-        bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
-        bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
+        shoot_bullets()
 
 def specialKeyListener(key, x, y):
     """
@@ -647,9 +799,8 @@ def mouseListener(button, state, x, y):
     Handles mouse inputs for firing bullets (left click).
     """
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN and not game_over:
-        # Fire from head shooters
-        bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
-        bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
+        # Fire bullets using the new shooting system
+        shoot_bullets()
 
 def main():
     glutInit()
