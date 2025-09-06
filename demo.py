@@ -763,6 +763,28 @@ def idle():
                 game_over = True
             break
     
+    # Bullet-heart collision and health gain
+    for bullet in bullets[:]:
+        for heart in hearts[:]:
+            distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
+            if distance < 30:
+                bullets.remove(bullet)
+                hearts.remove(heart)
+                health = min(100, health + 10)  # Gain 10 health, max 100
+                break
+
+    # Bullet-gift collision (activate 4x shooting)
+    for bullet in bullets[:]:
+        for gift in gifts[:]:
+            distance = ((bullet.x - gift.x)**2 + (bullet.y - gift.y)**2 + (bullet.z - gift.z)**2)**0.5
+            if distance < 35:
+                bullets.remove(bullet)
+                gifts.remove(gift)
+                four_x_active = True
+                four_x_start_time = time.time()
+                score += 10  # Bonus score for getting the power-up
+                break
+    
     glutPostRedisplay()
 
 def showScreen():
