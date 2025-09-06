@@ -40,6 +40,7 @@ boss_y = -GRID_LENGTH + 50  # Opposite side of the grid from UFO
 boss_z = 50
 boss_health = 100
 boss_shoot_timer = 0
+boss_shoot_interval = 120  # Boss shoots every 120 frames (about 2 seconds at 60fps)
 boss_spawn_timer = 0
 boss_last_ufo_x = 0  # Track UFO position for predictive shooting
 boss_spawned_this_level = False
@@ -81,9 +82,6 @@ class BossBullet:
         self.dx = dx
         self.dy = dy
         self.dz = dz
-
-# ...existing code...
-boss_bullets = []  # Boss bullets list
 
 # Diamond class
 class Diamond:
@@ -251,7 +249,7 @@ def draw_boss_bullet(bullet):
 
 def spawn_boss():
     """Spawn the boss at a random time during levels 2+"""
-    global boss_active, boss_x, boss_y, boss_z, boss_health, boss_spawn_timer
+    global boss_active, boss_x, boss_y, boss_z, boss_health, boss_spawn_timer, boss_shoot_interval
     
     if level >= 2 and not boss_active:
         # Random chance to spawn boss (increases with level)
@@ -263,6 +261,8 @@ def spawn_boss():
             boss_z = 50
             boss_health = 50 + (level * 25)  # Boss gets stronger with level
             boss_spawn_timer = 0
+            # Adjust boss shooting frequency based on level (faster shooting at higher levels)
+            boss_shoot_interval = max(60, 180 - (level * 10))  # Minimum 60 frames, decreases with level
 
 def update_boss():
     global boss_x
@@ -287,7 +287,6 @@ def boss_shoots_at_ufo():
     dz = dir_z / length * speed
     boss_bullets.append(BossBullet(boss_x, boss_y, boss_z, dx, dy, dz))
 
-
 def update_boss_bullets():
     for bullet in boss_bullets[:]:
         bullet.x += bullet.dx
@@ -296,7 +295,6 @@ def update_boss_bullets():
         # Remove if out of bounds
         if (abs(bullet.x) > GRID_LENGTH + 100 or abs(bullet.y) > GRID_LENGTH + 100 or bullet.z < 0 or bullet.z > WINDOW_HEIGHT):
             boss_bullets.remove(bullet)
-
 
 def draw_diamond(diamond):
     glPushMatrix()
@@ -614,7 +612,7 @@ def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
     global four_x_active, four_x_timer, diamond_spawn_counter, four_x_start_time
     global boss_active, boss_spawned_this_level, boss_next_spawn_score
-    global boss_health, boss_x, boss_y, boss_z
+    global boss_health, boss_x, boss_y, boss_z, boss_shoot_timer, boss_shoot_interval
     
     # Update 4x shooting timer
     if four_x_active:
@@ -677,8 +675,8 @@ def idle():
     update_boss_bullets()
 
     # Boss shooting logic
-    global boss_shoot_timer, boss_shoot_interval
     if boss_active:
+        update_boss()  # Update boss position
         boss_shoot_timer += 1
         if boss_shoot_timer >= boss_shoot_interval:
             boss_shoots_at_ufo()
@@ -943,7 +941,7 @@ def setupCamera():
 
 def keyboardListener(key, x, y):
     global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter, diamond_spawn_counter, four_x_active, four_x_timer, hearts, gifts
-    global boss_active, boss_health, boss_bullets
+    global boss_active, boss_health, boss_bullets, boss_spawned_this_level, boss_next_spawn_score
     
     if game_over:
         if key == b'r':
@@ -960,6 +958,8 @@ def keyboardListener(key, x, y):
             four_x_timer = 0
             boss_active = False
             boss_health = 100
+            boss_spawned_this_level = False
+            boss_next_spawn_score = 0
             bullets.clear()
             diamonds.clear()
             bombs.clear()
