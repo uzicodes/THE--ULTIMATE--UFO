@@ -42,6 +42,8 @@ boss_health = 100
 boss_shoot_timer = 0
 boss_spawn_timer = 0
 boss_last_ufo_x = 0  # Track UFO position for predictive shooting
+boss_spawned_this_level = False
+boss_next_spawn_score = 0
 
 # Game state
 score = 0
@@ -609,7 +611,7 @@ def shoot_bullets():
 def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
     global four_x_active, four_x_timer, diamond_spawn_counter, four_x_start_time
-    global boss_active, boss_health
+    global boss_active, boss_spawned_this_level, boss_next_spawn_score
     
     # Update 4x shooting timer
     if four_x_active:
@@ -621,11 +623,25 @@ def idle():
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
     
-    # Boss spawning and updating
-    spawn_boss()
-    if boss_active:
-        update_boss()
-    
+    # Boss spawn logic
+    if level >= 2:
+        if not boss_active and not boss_spawned_this_level:
+            if boss_next_spawn_score == 0:
+                # Pick a random score offset for boss spawn in this level
+                boss_next_spawn_score = score + random.randint(10, 40)
+            if score >= boss_next_spawn_score:
+                spawn_boss()
+                boss_active = True
+                boss_spawned_this_level = True
+        # Reset boss spawn for next level
+        if level > 2 and boss_spawned_this_level and score // 50 + 1 > level:
+            boss_spawned_this_level = False
+            boss_next_spawn_score = 0
+    else:
+        boss_active = False
+        boss_spawned_this_level = False
+        boss_next_spawn_score = 0
+        
     # Spawn diamonds, bombs, hearts, and gifts
     spawn_timer += 1
     spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels & more frequent diamonds
