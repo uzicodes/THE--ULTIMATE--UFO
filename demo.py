@@ -68,7 +68,7 @@ class Bomb:
         self.z = z
         self.speed = 0.7  # Same base speed as diamonds
         self.rotation = 0
-        self.active = True
+        # self.active = True
 
 # Heart class
 class Heart:
