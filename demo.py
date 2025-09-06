@@ -262,39 +262,13 @@ def spawn_boss():
             boss_spawn_timer = 0
 
 def update_boss():
-    """Update boss behavior - movement and shooting"""
-    global boss_x, boss_y, boss_shoot_timer, boss_last_ufo_x
-
-    if not boss_active:
-        return
-    
-    # Boss follows UFO's horizontal movement (predictive aiming)
-    target_x = ufo_x
-    boss_last_ufo_x = ufo_x
-    
-    # Boss moves towards UFO's x position but stays on its side
-    if abs(boss_x - target_x) > 20:  # Dead zone to prevent jittering
-        if boss_x < target_x:
-            boss_x += 8  # Boss movement speed
-        elif boss_x > target_x:
-            boss_x -= 8
-    
-    # Keep boss within grid bounds
-    boss_x = max(-GRID_LENGTH + 80, min(GRID_LENGTH - 80, boss_x))
-    
-    # Boss shooting logic
-    boss_shoot_timer += 1
-    shoot_interval = max(100 - (level * 10), 30)  # Shoots faster at higher levels
-    
-    if boss_shoot_timer >= shoot_interval:
-        # Boss shoots towards where the UFO is going (predictive)
-        predicted_ufo_x = ufo_x  # For now, just shoot at current position
-        
-        # Shoot from both weapon arms
-        boss_bullets.append(BossBullet(boss_x - 120, boss_y + 20, boss_z + 15, predicted_ufo_x))
-        boss_bullets.append(BossBullet(boss_x + 120, boss_y + 20, boss_z + 15, predicted_ufo_x))
-        
-        boss_shoot_timer = 0
+    global boss_x
+    # Boss only tracks UFO's X position (left/right), not Y or Z
+    if boss_x < ufo_x:
+        boss_x = min(boss_x + ufo_speed, ufo_x)
+    elif boss_x > ufo_x:
+        boss_x = max(boss_x - ufo_speed, ufo_x)
+    # Boss stays at fixed Y (opposite of UFO) and fixed Z
 
 def draw_diamond(diamond):
     glPushMatrix()
