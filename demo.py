@@ -736,7 +736,7 @@ def idle():
                 score += 5  # Bonus points for hitting boss
                 if boss_health <= 0:
                     boss_active = False
-                    score += 100  # Big bonus for defeating boss
+                    score += get_boss_defeat_reward(level)
                     boss_health = 100  # Reset for next boss
                 break
     
@@ -986,6 +986,19 @@ def get_boss_bullet_damage_percent(level):
     elif level == 20:
         return 0.25
     return 0.05  # Default for safety
+
+def get_boss_defeat_reward(level):
+    if 2 <= level <= 5:
+        return 20
+    elif 6 <= level <= 10:
+        return 40
+    elif 11 <= level <= 15:
+        return 60
+    elif 16 <= level <= 19:
+        return 80
+    elif level == 20:
+        return 100
+    return 20  # Default for safety
 
 def main():
     glutInit()
