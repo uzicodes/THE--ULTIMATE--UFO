@@ -81,7 +81,9 @@ class BossBullet:
         self.dx = dx
         self.dy = dy
         self.dz = dz
-        self.active = True
+
+# ...existing code...
+boss_bullets = []  # Boss bullets list
 
 # Diamond class
 class Diamond:
@@ -285,6 +287,7 @@ def boss_shoots_at_ufo():
     dz = dir_z / length * speed
     boss_bullets.append(BossBullet(boss_x, boss_y, boss_z, dx, dy, dz))
 
+
 def update_boss_bullets():
     for bullet in boss_bullets[:]:
         bullet.x += bullet.dx
@@ -293,6 +296,7 @@ def update_boss_bullets():
         # Remove if out of bounds
         if (abs(bullet.x) > GRID_LENGTH + 100 or abs(bullet.y) > GRID_LENGTH + 100 or bullet.z < 0 or bullet.z > WINDOW_HEIGHT):
             boss_bullets.remove(bullet)
+
 
 def draw_diamond(diamond):
     glPushMatrix()
@@ -670,19 +674,15 @@ def idle():
             bullets.remove(bullet)
     
     # Update boss bullets
-    for boss_bullet in boss_bullets[:]:
-        # Boss bullets move towards the UFO
-        boss_bullet.y += boss_bullet.speed
-        # Simple tracking - move slightly towards target_x
-        if abs(boss_bullet.x - boss_bullet.target_x) > 5:
-            if boss_bullet.x < boss_bullet.target_x:
-                boss_bullet.x += 3
-            elif boss_bullet.x > boss_bullet.target_x:
-                boss_bullet.x -= 3
-        
-        # Remove boss bullets that go off screen
-        if boss_bullet.y > GRID_LENGTH:
-            boss_bullets.remove(boss_bullet)
+    update_boss_bullets()
+
+    # Boss shooting logic
+    global boss_shoot_timer, boss_shoot_interval
+    if boss_active:
+        boss_shoot_timer += 1
+        if boss_shoot_timer >= boss_shoot_interval:
+            boss_shoots_at_ufo()
+            boss_shoot_timer = 0
     
     # Update diamonds
     diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 0.1 per level
