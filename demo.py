@@ -255,8 +255,8 @@ def spawn_boss():
         spawn_chance = (level - 1) * 0.001  # 0.1% at level 2, 0.2% at level 3, etc.
         if random.random() < spawn_chance:
             boss_active = True
-            boss_x = random.randint(-GRID_LENGTH + 100, GRID_LENGTH - 100)
-            boss_y = -GRID_LENGTH + 50  # Opposite side from player
+            boss_x = ufo_x
+            boss_y = -ufo_y  # Place boss at the exact opposite Y position of the UFO
             boss_z = 50
             boss_health = 50 + (level * 25)  # Boss gets stronger with level
             boss_spawn_timer = 0
@@ -264,7 +264,7 @@ def spawn_boss():
 def update_boss():
     """Update boss behavior - movement and shooting"""
     global boss_x, boss_y, boss_shoot_timer, boss_last_ufo_x
-    
+
     if not boss_active:
         return
     
