@@ -740,127 +740,28 @@ def idle():
                     boss_health = 100  # Reset for next boss
                 break
     
-    # Boss bullet-player collision
-    for boss_bullet in boss_bullets[:]:
+    # Boss bullet-UFO collision and health reduction
+    for bullet in boss_bullets[:]:
         # Check collision with UFO body
-        ufo_distance = ((ufo_x - boss_bullet.x)**2 + (ufo_y - boss_bullet.y)**2 + (ufo_z - boss_bullet.z)**2)**0.5
-        # Also check wing collisions
-        wing_offsets = [(-80, 0, 0), (80, 0, 0)]  # Left and right wings
+        ufo_distance = ((ufo_x - bullet.x)**2 + (ufo_y - bullet.y)**2 + (ufo_z - bullet.z)**2)**0.5
         wing_hit = False
+        wing_offsets = [(-80, 0, 0), (80, 0, 0)]
+        wing_collision_radius = 50
         for wx, wy, wz in wing_offsets:
             wing_x = ufo_x + wx
             wing_y = ufo_y + wy
             wing_z = ufo_z + wz
-            wing_distance = ((wing_x - boss_bullet.x)**2 + (wing_y - boss_bullet.y)**2 + (wing_z - boss_bullet.z)**2)**0.5
-            if wing_distance < 50:
+            wing_distance = ((wing_x - bullet.x)**2 + (wing_y - bullet.y)**2 + (wing_z - bullet.z)**2)**0.5
+            if wing_distance < wing_collision_radius:
                 wing_hit = True
                 break
-        
         if ufo_distance < 50 or wing_hit:
-            boss_bullets.remove(boss_bullet)
-            health = max(0, health - 15)  # Boss bullets do more damage
-            score = max(0, score - 3)  # Small score penalty
+            boss_bullets.remove(bullet)
+            damage_percent = get_boss_bullet_damage_percent(level)
+            health = max(0, int(health - (100 * damage_percent)))
             if health <= 0:
                 game_over = True
             break
-    
-    # Bullet-heart collision and scoring
-    for bullet in bullets[:]:
-        for heart in hearts[:]:
-            distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
-            if distance < 25:  # Smaller collision radius for hearts
-                bullets.remove(bullet)
-                hearts.remove(heart)
-                score += 5  # Higher score for collecting hearts
-                health = min(100, health + 10)  # Heal for collecting hearts, up to 100%
-                break
-    
-    # Bullet-gift collision (activate 4x shooting)
-    for bullet in bullets[:]:
-        for gift in gifts[:]:
-            distance = ((bullet.x - gift.x)**2 + (bullet.y - gift.y)**2 + (gift.z - gift.z)**2)**0.5
-            if distance < 35:
-                bullets.remove(bullet)
-                gifts.remove(gift)
-                four_x_active = True
-                four_x_start_time = time.time()
-                score += 10  # Bonus score for getting the power-up
-                break
-    
-    # UFO-bomb collision (direct hit or wing hit)
-    # Define wing positions relative to UFO
-    wing_offsets = [(-80, 0, 0), (80, 0, 0)]  # Left and right wings
-    wing_collision_radius = 50  # Same as UFO body for simplicity
-    for bomb in bombs[:]:
-        # Check collision with UFO body
-        ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
-        wing_hit = False
-        for wx, wy, wz in wing_offsets:
-            wing_x = ufo_x + wx
-            wing_y = ufo_y + wy
-            wing_z = ufo_z + wz
-            wing_distance = ((wing_x - bomb.x)**2 + (wing_y - bomb.y)**2 + (wing_z - bomb.z)**2)**0.5
-            if wing_distance < wing_collision_radius:
-                wing_hit = True
-                break
-        if ufo_distance < 50 or wing_hit:
-            bombs.remove(bomb)
-            health = max(0, health - 10)  # Reduce health by fixed 10 points
-            score = max(0, score - 10)  # Score penalty for direct hit
-            if health <= 0:
-                game_over = True
-    
-    # UFO-heart collision (direct hit or wing hit)
-    for heart in hearts[:]:
-        ufo_distance = ((ufo_x - heart.x)**2 + (ufo_y - heart.y)**2 + (ufo_z - heart.z)**2)**0.5
-        wing_hit = False
-        for wx, wy, wz in wing_offsets:
-            wing_x = ufo_x + wx
-            wing_y = ufo_y + wy
-            wing_z = ufo_z + wz
-            wing_distance = ((wing_x - heart.x)**2 + (wing_y - heart.y)**2 + (wing_z - heart.z)**2)**0.5
-            if wing_distance < wing_collision_radius:
-                wing_hit = True
-                break
-        if ufo_distance < 50 or wing_hit:
-            hearts.remove(heart)
-            health = min(100, health + 10)  # Gain 10 health, max 100
-            break
-    
-    # UFO-gift collision (direct hit or wing hit) - activate 4x shooting
-    for gift in gifts[:]:
-        ufo_distance = ((ufo_x - gift.x)**2 + (ufo_y - gift.y)**2 + (ufo_z - gift.z)**2)**0.5
-        wing_hit = False
-        for wx, wy, wz in wing_offsets:
-            wing_x = ufo_x + wx
-            wing_y = ufo_y + wy
-            wing_z = ufo_z + wz
-            wing_distance = ((wing_x - gift.x)**2 + (wing_y - gift.y)**2 + (wing_z - gift.z)**2)**0.5
-            if wing_distance < wing_collision_radius:
-                wing_hit = True
-                break
-        if ufo_distance < 50 or wing_hit:
-            gifts.remove(gift)
-            four_x_active = True
-            four_x_start_time = time.time()
-            score += 10  # Bonus score for getting the power-up
-            break
-    
-    # Bullet-boss collision and health reduction
-    for bullet in bullets[:]:
-        if boss_active:
-            # Calculate distance to boss center (adjust as needed for hitbox)
-            distance = ((bullet.x - boss_x)**2 + (bullet.y - boss_y)**2 + (bullet.z - boss_z)**2)**0.5
-            if distance < 60:  # Boss hitbox radius
-                bullets.remove(bullet)
-                damage_percent = get_boss_damage_percent(level)
-                boss_health -= int(boss_health * damage_percent)
-                score += 5
-                if boss_health <= 0:
-                    boss_active = False
-                    score += 100  # Bonus for defeating boss
-                    boss_health = 100  # Reset for next boss
-                break
     
     glutPostRedisplay()
 
@@ -1072,6 +973,19 @@ def get_boss_damage_percent(level):
     elif level == 20:
         return 0.05
     return 0.25  # Default for safety
+
+def get_boss_bullet_damage_percent(level):
+    if 2 <= level <= 5:
+        return 0.05
+    elif 6 <= level <= 10:
+        return 0.10
+    elif 11 <= level <= 15:
+        return 0.15
+    elif 16 <= level <= 19:
+        return 0.20
+    elif level == 20:
+        return 0.25
+    return 0.05  # Default for safety
 
 def main():
     glutInit()
