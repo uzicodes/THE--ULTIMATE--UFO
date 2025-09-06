@@ -31,6 +31,17 @@ diamonds = []
 bombs = []  # New bombs list
 hearts = []  # New hearts list
 gifts = []  # New 4x shooting gifts list
+boss_bullets = []  # Boss bullets list
+
+# Boss/Enemy variables
+boss_active = False
+boss_x = 0
+boss_y = -GRID_LENGTH + 50  # Opposite side of the grid from UFO
+boss_z = 50
+boss_health = 100
+boss_shoot_timer = 0
+boss_spawn_timer = 0
+boss_last_ufo_x = 0  # Track UFO position for predictive shooting
 
 # Game state
 score = 0
@@ -57,6 +68,16 @@ class Bullet:
         self.y = y
         self.z = z
         self.speed = 20
+        self.active = True
+
+# Boss Bullet class
+class BossBullet:
+    def __init__(self, x, y, z, target_x):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.speed = 15
+        self.target_x = target_x  # Where the boss is aiming
         self.active = True
 
 # Diamond class
@@ -118,6 +139,160 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
+
+def draw_boss():
+    """Draw the boss enemy with purple color #a742f5"""
+    glPushMatrix()
+    glTranslatef(boss_x, boss_y, boss_z)
+    
+    # Boss color - purple #a742f5
+    boss_r = 0xa7 / 255.0  # 167/255
+    boss_g = 0x42 / 255.0  # 66/255
+    boss_b = 0xf5 / 255.0  # 245/255
+    
+    # Main boss body - larger and more intimidating than player UFO
+    glColor3f(boss_r, boss_g, boss_b)
+    
+    # Boss main dome (larger than player)
+    glPushMatrix()
+    glTranslatef(0, 0, 30)
+    gluSphere(gluNewQuadric(), 60, 12, 12)
+    glPopMatrix()
+    
+    # Boss base/disk (larger)
+    glPushMatrix()
+    glScalef(1.2, 1.2, 0.4)
+    gluSphere(gluNewQuadric(), 80, 20, 10)
+    glPopMatrix()
+    
+    # Boss weapon arms (menacing extensions)
+    glColor3f(boss_r * 0.8, boss_g * 0.8, boss_b * 0.8)  # Slightly darker
+    
+    # Left weapon arm
+    glPushMatrix()
+    glTranslatef(-100, 0, 10)
+    glScalef(1.2, 0.4, 0.3)
+    glutSolidCube(70)
+    glPopMatrix()
+    
+    # Right weapon arm
+    glPushMatrix()
+    glTranslatef(100, 0, 10)
+    glScalef(1.2, 0.4, 0.3)
+    glutSolidCube(70)
+    glPopMatrix()
+    
+    # Boss weapon cannons (glowing red)
+    glColor3f(1, 0, 0)  # Red for danger
+    
+    # Left cannon
+    glPushMatrix()
+    glTranslatef(-120, 20, 15)
+    gluCylinder(gluNewQuadric(), 8, 6, 25, 8, 1)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(-120, -20, 15)
+    gluCylinder(gluNewQuadric(), 8, 6, 25, 8, 1)
+    glPopMatrix()
+    
+    # Right cannon
+    glPushMatrix()
+    glTranslatef(120, 20, 15)
+    gluCylinder(gluNewQuadric(), 8, 6, 25, 8, 1)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(120, -20, 15)
+    gluCylinder(gluNewQuadric(), 8, 6, 25, 8, 1)
+    glPopMatrix()
+    
+    # Boss central eye/core (glowing)
+    glColor3f(1, 0.2, 0.2)  # Bright red core
+    glPushMatrix()
+    glTranslatef(0, 0, 35)
+    glutSolidSphere(15, 10, 10)
+    glPopMatrix()
+    
+    # Additional menacing spikes around the boss
+    glColor3f(boss_r * 0.6, boss_g * 0.6, boss_b * 0.6)
+    
+    # Front spikes
+    for i in range(6):
+        angle = i * 60  # 60 degrees apart
+        spike_x = 70 * math.cos(math.radians(angle))
+        spike_y = 70 * math.sin(math.radians(angle))
+        glPushMatrix()
+        glTranslatef(spike_x, spike_y, 0)
+        glRotatef(angle, 0, 0, 1)
+        gluCylinder(gluNewQuadric(), 4, 0, 20, 6, 1)
+        glPopMatrix()
+    
+    glPopMatrix()
+
+def draw_boss_bullet(bullet):
+    """Draw boss bullets - different from player bullets"""
+    glPushMatrix()
+    glTranslatef(bullet.x, bullet.y, bullet.z)
+    glColor3f(1, 0, 0)  # Red boss bullets
+    # Make boss bullets larger and more menacing
+    glutSolidSphere(10, 8, 8)
+    
+    # Add some glowing effect around the bullet
+    glColor3f(1, 0.5, 0.5)
+    glutWireSphere(12, 6, 6)
+    
+    glPopMatrix()
+
+def spawn_boss():
+    """Spawn the boss at a random time during levels 2+"""
+    global boss_active, boss_x, boss_y, boss_z, boss_health, boss_spawn_timer
+    
+    if level >= 2 and not boss_active:
+        # Random chance to spawn boss (increases with level)
+        spawn_chance = (level - 1) * 0.001  # 0.1% at level 2, 0.2% at level 3, etc.
+        if random.random() < spawn_chance:
+            boss_active = True
+            boss_x = random.randint(-GRID_LENGTH + 100, GRID_LENGTH - 100)
+            boss_y = -GRID_LENGTH + 50  # Opposite side from player
+            boss_z = 50
+            boss_health = 50 + (level * 25)  # Boss gets stronger with level
+            boss_spawn_timer = 0
+
+def update_boss():
+    """Update boss behavior - movement and shooting"""
+    global boss_x, boss_y, boss_shoot_timer, boss_last_ufo_x
+    
+    if not boss_active:
+        return
+    
+    # Boss follows UFO's horizontal movement (predictive aiming)
+    target_x = ufo_x
+    boss_last_ufo_x = ufo_x
+    
+    # Boss moves towards UFO's x position but stays on its side
+    if abs(boss_x - target_x) > 20:  # Dead zone to prevent jittering
+        if boss_x < target_x:
+            boss_x += 8  # Boss movement speed
+        elif boss_x > target_x:
+            boss_x -= 8
+    
+    # Keep boss within grid bounds
+    boss_x = max(-GRID_LENGTH + 80, min(GRID_LENGTH - 80, boss_x))
+    
+    # Boss shooting logic
+    boss_shoot_timer += 1
+    shoot_interval = max(100 - (level * 10), 30)  # Shoots faster at higher levels
+    
+    if boss_shoot_timer >= shoot_interval:
+        # Boss shoots towards where the UFO is going (predictive)
+        predicted_ufo_x = ufo_x  # For now, just shoot at current position
+        
+        # Shoot from both weapon arms
+        boss_bullets.append(BossBullet(boss_x - 120, boss_y + 20, boss_z + 15, predicted_ufo_x))
+        boss_bullets.append(BossBullet(boss_x + 120, boss_y + 20, boss_z + 15, predicted_ufo_x))
+        
+        boss_shoot_timer = 0
 
 def draw_diamond(diamond):
     glPushMatrix()
@@ -434,6 +609,7 @@ def shoot_bullets():
 def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
     global four_x_active, four_x_timer, diamond_spawn_counter, four_x_start_time
+    global boss_active, boss_health
     
     # Update 4x shooting timer
     if four_x_active:
@@ -444,6 +620,11 @@ def idle():
     # Leveling system: update level based on score
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
+    
+    # Boss spawning and updating
+    spawn_boss()
+    if boss_active:
+        update_boss()
     
     # Spawn diamonds, bombs, hearts, and gifts
     spawn_timer += 1
@@ -472,6 +653,21 @@ def idle():
         bullet.y -= bullet.speed
         if bullet.y < -GRID_LENGTH:
             bullets.remove(bullet)
+    
+    # Update boss bullets
+    for boss_bullet in boss_bullets[:]:
+        # Boss bullets move towards the UFO
+        boss_bullet.y += boss_bullet.speed
+        # Simple tracking - move slightly towards target_x
+        if abs(boss_bullet.x - boss_bullet.target_x) > 5:
+            if boss_bullet.x < boss_bullet.target_x:
+                boss_bullet.x += 3
+            elif boss_bullet.x > boss_bullet.target_x:
+                boss_bullet.x -= 3
+        
+        # Remove boss bullets that go off screen
+        if boss_bullet.y > GRID_LENGTH:
+            boss_bullets.remove(boss_bullet)
     
     # Update diamonds
     diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 0.1 per level
@@ -539,6 +735,44 @@ def idle():
                 if health <= 0:
                     game_over = True
                 break
+    
+    # Player bullet-boss collision
+    if boss_active:
+        for bullet in bullets[:]:
+            boss_distance = ((bullet.x - boss_x)**2 + (bullet.y - boss_y)**2 + (bullet.z - boss_z)**2)**0.5
+            if boss_distance < 80:  # Boss is larger, so larger collision radius
+                bullets.remove(bullet)
+                boss_health -= 10  # Each bullet does 10 damage to boss
+                score += 5  # Bonus points for hitting boss
+                if boss_health <= 0:
+                    boss_active = False
+                    score += 100  # Big bonus for defeating boss
+                    boss_health = 100  # Reset for next boss
+                break
+    
+    # Boss bullet-player collision
+    for boss_bullet in boss_bullets[:]:
+        # Check collision with UFO body
+        ufo_distance = ((ufo_x - boss_bullet.x)**2 + (ufo_y - boss_bullet.y)**2 + (ufo_z - boss_bullet.z)**2)**0.5
+        # Also check wing collisions
+        wing_offsets = [(-80, 0, 0), (80, 0, 0)]  # Left and right wings
+        wing_hit = False
+        for wx, wy, wz in wing_offsets:
+            wing_x = ufo_x + wx
+            wing_y = ufo_y + wy
+            wing_z = ufo_z + wz
+            wing_distance = ((wing_x - boss_bullet.x)**2 + (wing_y - boss_bullet.y)**2 + (wing_z - boss_bullet.z)**2)**0.5
+            if wing_distance < 50:
+                wing_hit = True
+                break
+        
+        if ufo_distance < 50 or wing_hit:
+            boss_bullets.remove(boss_bullet)
+            health = max(0, health - 15)  # Boss bullets do more damage
+            score = max(0, score - 3)  # Small score penalty
+            if health <= 0:
+                game_over = True
+            break
     
     # Bullet-heart collision and scoring
     for bullet in bullets[:]:
@@ -676,8 +910,15 @@ def showScreen():
         if not camera_mode_3d:
             draw_ufo()
     
+    # Draw boss if active
+    if boss_active:
+        draw_boss()
+    
     for bullet in bullets:
         draw_bullet(bullet)
+    
+    for boss_bullet in boss_bullets:
+        draw_boss_bullet(boss_bullet)
     
     for diamond in diamonds:
         draw_diamond(diamond)
@@ -697,6 +938,11 @@ def showScreen():
     draw_text(10, 740, f"Health: {health}%")
     draw_text(10, 710, f"Level: {level}")
     draw_text(10, 680, f"Camera: {camera_mode_text}")
+    
+    # Boss status
+    if boss_active:
+        draw_text(10, 560, f"BOSS ACTIVE! Health: {boss_health}")
+        draw_text(10, 530, "Boss is tracking you and shooting!")
     
     # 4x shooting status
     if four_x_active:
@@ -743,6 +989,8 @@ def setupCamera():
 
 def keyboardListener(key, x, y):
     global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter, diamond_spawn_counter, four_x_active, four_x_timer, hearts, gifts
+    global boss_active, boss_health, boss_bullets
+    
     if game_over:
         if key == b'r':
             ufo_x = 0
@@ -756,11 +1004,14 @@ def keyboardListener(key, x, y):
             difficulty_level = 1
             four_x_active = False
             four_x_timer = 0
+            boss_active = False
+            boss_health = 100
             bullets.clear()
             diamonds.clear()
             bombs.clear()
             hearts.clear()
             gifts.clear()
+            boss_bullets.clear()
         return
     # Toggle camera mode with 'C' key
     if key == b'c':
@@ -808,7 +1059,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     glutInitWindowPosition(100, 10)  
-    glutCreateWindow(b"THE ULTIMATE UFO")
+    glutCreateWindow(b"THE ULTIMATE UFO - WITH BOSS")
     glEnable(GL_DEPTH_TEST)
     glClearColor(0, 0, 0.1, 1)
     glutDisplayFunc(showScreen)
