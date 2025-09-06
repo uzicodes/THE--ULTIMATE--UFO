@@ -343,7 +343,7 @@ def idle():
     
     # Spawn diamonds, bombs, and hearts
     spawn_timer += 1
-    spawn_interval = max(1500 - (level - 1) * 60, 300)
+    spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels and more frequent diamonds
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
         spawn_diamond()
         bomb_spawn_counter += 1
