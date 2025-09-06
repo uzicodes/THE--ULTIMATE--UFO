@@ -4,6 +4,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 import random
 import math
+import time
 
 # Game variables
 NUM_STARS = 100
@@ -46,7 +47,8 @@ max_level = 20
 # 4x Shooting power-up variables
 four_x_active = False
 four_x_timer = 0
-four_x_duration = 10000  # 10 seconds in milliseconds (approximate)
+four_x_start_time = 0
+four_x_duration = 10  # 10 seconds, real time
 
 # Bullet class
 class Bullet:
@@ -431,14 +433,13 @@ def shoot_bullets():
 
 def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
-    global four_x_active, four_x_timer, diamond_spawn_counter
+    global four_x_active, four_x_timer, diamond_spawn_counter, four_x_start_time
     
     # Update 4x shooting timer
     if four_x_active:
-        four_x_timer += 16  # Approximate time increment (16ms per frame)
-        if four_x_timer >= four_x_duration:
+        if time.time() - four_x_start_time >= four_x_duration:
             four_x_active = False
-            four_x_timer = 0
+            four_x_start_time = 0
     
     # Leveling system: update level based on score
     level = min(max_level, score // 50 + 1)
@@ -558,7 +559,7 @@ def idle():
                 bullets.remove(bullet)
                 gifts.remove(gift)
                 four_x_active = True
-                four_x_timer = 0
+                four_x_start_time = time.time()
                 score += 10  # Bonus score for getting the power-up
                 break
     
@@ -617,7 +618,7 @@ def idle():
         if ufo_distance < 50 or wing_hit:
             gifts.remove(gift)
             four_x_active = True
-            four_x_timer = 0
+            four_x_start_time = time.time()
             score += 10  # Bonus score for getting the power-up
             break
     
@@ -699,7 +700,7 @@ def showScreen():
     
     # 4x shooting status
     if four_x_active:
-        remaining_time = max(0, (four_x_duration - four_x_timer) // 1000)
+        remaining_time = max(0, int(four_x_duration - (time.time() - four_x_start_time)))
         draw_text(10, 650, f"4X SHOOTING ACTIVE! Time: {remaining_time}s")
         draw_text(10, 620, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot (4X!), C to toggle camera")
     else:
