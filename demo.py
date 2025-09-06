@@ -614,6 +614,11 @@ def idle():
     global boss_active, boss_spawned_this_level, boss_next_spawn_score
     global boss_health, boss_x, boss_y, boss_z, boss_shoot_timer, boss_shoot_interval
     
+    # IMPORTANT: If game is over, only update the display - don't update any game logic
+    if game_over:
+        glutPostRedisplay()
+        return
+    
     # Update 4x shooting timer
     if four_x_active:
         if time.time() - four_x_start_time >= four_x_duration:
