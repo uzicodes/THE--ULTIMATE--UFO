@@ -644,9 +644,15 @@ def idle():
             four_x_start_time = 0
     
     # Leveling system: update level based on score
+    prev_level = level
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
-    
+
+    # Reset boss spawn for every new level (from level 2+)
+    if level >= 2 and level != prev_level:
+        boss_spawned_this_level = False
+        boss_next_spawn_score = 0
+
     # Boss spawn logic
     if level >= 2:
         if not boss_active and not boss_spawned_this_level:
@@ -657,10 +663,6 @@ def idle():
                 spawn_boss()
                 boss_active = True
                 boss_spawned_this_level = True
-        # Reset boss spawn for next level
-        if level > 2 and boss_spawned_this_level and score // 50 + 1 > level:
-            boss_spawned_this_level = False
-            boss_next_spawn_score = 0
     else:
         boss_active = False
         boss_spawned_this_level = False
@@ -809,7 +811,7 @@ def idle():
                 game_over = True
             break
     
-    # Bullet-heart collision and health gain
+    # Bullet-heart collision & health gain
     for bullet in bullets[:]:
         for heart in hearts[:]:
             distance = ((bullet.x - heart.x)**2 + (bullet.y - heart.y)**2 + (bullet.z - heart.z)**2)**0.5
@@ -838,7 +840,7 @@ def showScreen():
     glLoadIdentity()
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    # Draw stars on the black background only in overhead view
+    # overhead view stars
     if not camera_mode_3d:
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
@@ -881,7 +883,7 @@ def showScreen():
     
     # Draw game objects
     if not game_over:
-        # In 3D pilot view, don't draw the UFO since we're inside it
+        # In 3D pilot view
         if not camera_mode_3d:
             draw_ufo()
     
@@ -928,9 +930,7 @@ def showScreen():
         draw_text(10, 620, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot (4X!), C to toggle camera")
     else:
         draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
-        pass  # No diamond_spawn_counter print here
-    
-    
+        pass  
     
     draw_text(10, 590, "WARNING: Avoid shooting bombs! Collect golden gifts for 4X shooting!")
     
