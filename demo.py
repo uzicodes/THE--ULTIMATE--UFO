@@ -304,35 +304,39 @@ def draw_heart(heart):
     glutSolidSphere(15, 16, 16)
     glPopMatrix()
 
+def is_spawn_position_clear(x, y, z, min_dist=60):
+    for obj in diamonds + bombs + hearts:
+        dist = ((x - obj.x)**2 + (y - obj.y)**2 + (z - obj.z)**2)**0.5
+        if dist < min_dist:
+            return False
+    return True
+
 def spawn_diamond():
-    """Spawn a new diamond at random position from the entire top edge of the grid"""
-    # Random X position across the entire width of the grid
-    x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
-    # Start from the top edge (far end)
-    y = -GRID_LENGTH + 20
-    # Random height for visual variety
-    z = random.randint(15, 80)
-    diamonds.append(Diamond(x, y, z))
+    for _ in range(10):  # Try up to 10 times to find a clear spot
+        x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+        y = -GRID_LENGTH + 20
+        z = random.randint(15, 80)
+        if is_spawn_position_clear(x, y, z):
+            diamonds.append(Diamond(x, y, z))
+            return
 
 def spawn_bomb():
-    """Spawn a new bomb at random position from the entire top edge of the grid"""
-    # Random X position across the entire width of the grid
-    x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
-    # Start from the top edge (far end)
-    y = -GRID_LENGTH + 20
-    # Random height for visual variety
-    z = random.randint(15, 80)
-    bombs.append(Bomb(x, y, z))
+    for _ in range(10):
+        x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+        y = -GRID_LENGTH + 20
+        z = random.randint(15, 80)
+        if is_spawn_position_clear(x, y, z):
+            bombs.append(Bomb(x, y, z))
+            return
 
 def spawn_heart():
-    """Spawn a new heart at random position from the entire top edge of the grid"""
-    # Random X position across the entire width of the grid
-    x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
-    # Start from the top edge (far end)
-    y = -GRID_LENGTH + 20
-    # Random height for visual variety
-    z = random.randint(15, 80)
-    hearts.append(Heart(x, y, z))
+    for _ in range(10):
+        x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
+        y = -GRID_LENGTH + 20
+        z = random.randint(15, 80)
+        if is_spawn_position_clear(x, y, z):
+            hearts.append(Heart(x, y, z))
+            return
 
 def idle():
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter, health, game_over
@@ -343,7 +347,7 @@ def idle():
     
     # Spawn diamonds, bombs, and hearts
     spawn_timer += 1
-    spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels and more frequent diamonds
+    spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels & more frequent diamonds
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
         spawn_diamond()
         bomb_spawn_counter += 1
