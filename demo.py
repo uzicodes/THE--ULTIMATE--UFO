@@ -614,11 +614,117 @@ def idle():
     global boss_active, boss_spawned_this_level, boss_next_spawn_score
     global boss_health, boss_x, boss_y, boss_z, boss_shoot_timer, boss_shoot_interval
     
-    if game_over:
-        glutPostRedisplay()
-        return
+    # Update 4x shooting timer
+    if four_x_active:
+        if time.time() - four_x_start_time >= four_x_duration:
+            four_x_active = False
+            four_x_start_time = 0
+    
+    # Leveling system: update level based on score
+    level = min(max_level, score // 50 + 1)
+    difficulty_level = level
+    
+    # Boss spawn logic
+    if level >= 2:
+        if not boss_active and not boss_spawned_this_level:
+            if boss_next_spawn_score == 0:
+                # Pick a random score offset for boss spawn in this level
+                boss_next_spawn_score = score + random.randint(10, 40)
+            if score >= boss_next_spawn_score:
+                spawn_boss()
+                boss_active = True
+                boss_spawned_this_level = True
+        # Reset boss spawn for next level
+        if level > 2 and boss_spawned_this_level and score // 50 + 1 > level:
+            boss_spawned_this_level = False
+            boss_next_spawn_score = 0
+    else:
+        boss_active = False
+        boss_spawned_this_level = False
+        boss_next_spawn_score = 0
+        
+    # Spawn diamonds, bombs, hearts, and gifts
+    spawn_timer += 1
+    spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels & more frequent diamonds
+    if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
+        spawn_diamond()
+        bomb_spawn_counter += 1
+        heart_spawn_counter += 1
+        
+        # Every 30th diamond, spawn a gift (4x power-up)
+        if diamond_spawn_counter % 30 == 0 and diamond_spawn_counter > 0:
+            spawn_gift()
+        
+        # Every 5th spawn, also spawn a bomb
+        if bomb_spawn_counter >= 5:
+            spawn_bomb()
+            bomb_spawn_counter = 0
+        # Every 10th spawn, also spawn a heart
+        if heart_spawn_counter >= 10:
+            spawn_heart()
+            heart_spawn_counter = 0
+        spawn_timer = 0
+    
+    # Update bullets
+    for bullet in bullets[:]:
+        bullet.y -= bullet.speed
+        if bullet.y < -GRID_LENGTH:
+            bullets.remove(bullet)
+    
+    # Update boss bullets
+    update_boss_bullets()
 
-    # ...existing code for all game updates...
+    # Boss shooting logic
+    if boss_active:
+        update_boss()  # Update boss position
+        boss_shoot_timer += 1
+        if boss_shoot_timer >= boss_shoot_interval:
+            boss_shoots_at_ufo()
+            boss_shoot_timer = 0
+    
+    # Update diamonds
+    diamond_speed = 0.15 + (level - 1) * 0.1  # Increase speed by 0.1 per level
+    for diamond in diamonds[:]:
+        diamond.y += diamond_speed
+        diamond.rotation += 3
+        if diamond.z < 30:
+            diamonds.remove(diamond)
+            continue
+        if diamond.y > GRID_LENGTH:
+            diamonds.remove(diamond)
+    
+    # Update bombs with same speed increase as diamonds
+    bomb_speed = 0.15 + (level - 1) * 0.1  # Same speed progression as diamonds
+    for bomb in bombs[:]:
+        bomb.y += bomb_speed
+        bomb.rotation += 2  # Slightly different rotation speed
+        if bomb.z < 30:
+            bombs.remove(bomb)
+            continue
+        if bomb.y > GRID_LENGTH:
+            bombs.remove(bomb)
+    
+    # Update hearts with same speed increase as diamonds and bombs
+    heart_speed = 0.15 + (level - 1) * 0.1
+    for heart in hearts[:]:
+        heart.y += heart_speed
+        heart.rotation += 2
+        if heart.z < 30:
+            hearts.remove(heart)
+            continue
+        if heart.y > GRID_LENGTH:
+            hearts.remove(heart)
+    
+    # Update gifts with same speed as other objects
+    gift_speed = 0.15 + (level - 1) * 0.1
+    for gift in gifts[:]:
+        gift.y += gift_speed
+        gift.rotation += 4  # Faster rotation for gifts to make them more noticeable
+        if gift.z < 30:
+            gifts.remove(gift)
+            continue
+        if gift.y > GRID_LENGTH:
+            gifts.remove(gift)
     
     # Bullet-diamond collision and scoring
     for bullet in bullets[:]:
