@@ -43,7 +43,7 @@ max_level = 20
 
 # Bullet class
 class Bullet:
-    def _init_(self, x, y, z):
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
@@ -52,7 +52,7 @@ class Bullet:
 
 # Diamond class
 class Diamond:
-    def _init_(self, x, y, z):
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
@@ -62,7 +62,7 @@ class Diamond:
 
 # Bomb class
 class Bomb:
-    def _init_(self, x, y, z):
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
@@ -72,7 +72,7 @@ class Bomb:
 
 # Heart class
 class Heart:
-    def _init_(self, x, y, z):
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
