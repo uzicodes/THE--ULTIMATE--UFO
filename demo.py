@@ -294,7 +294,19 @@ def boss_shoots_at_ufo():
     length = math.sqrt(dir_x**2 + dir_y**2 + dir_z**2)
     if length == 0:
         length = 1  # Prevent division by zero
-    speed = 12  # Boss bullet speed
+    # Set boss bullet speed by level range
+    if 2 <= level <= 5:
+        speed = 8
+    elif 6 <= level <= 10:
+        speed = 10
+    elif 11 <= level <= 15:
+        speed = 12
+    elif 16 <= level <= 19:
+        speed = 14
+    elif level == 20:
+        speed = 16
+    else:
+        speed = 8  # Default for safety
     dx = dir_x / length * speed
     dy = dir_y / length * speed
     dz = dir_z / length * speed
@@ -623,6 +635,10 @@ def shoot_bullets():
 
 def idle():
     # ...existing code...
+    global boss_reward_given
+    if 'boss_reward_given' not in globals():
+        boss_reward_given = False
+    # ...existing code...
     # Place UFO-bomb and UFO-heart collision logic here, after global declarations
     global health, game_over
     # UFO-bomb collision: decrease health by 10% for each bomb hit
@@ -809,10 +825,13 @@ def idle():
                     percent = 0.25  # Default for safety
                 boss_health = max(0, boss_health - int(boss_health * percent))
                 score += 5  # Bonus points for hitting boss
-                if boss_health <= 0:
+                if boss_health <= 0 and not boss_reward_given:
                     boss_active = False
                     score += get_boss_defeat_reward(level)
                     boss_health = 100  # Reset for next boss
+                    boss_reward_given = True
+                if boss_health > 0:
+                    boss_reward_given = False
                 break
     
     # Boss bullet-UFO collision and health reduction
