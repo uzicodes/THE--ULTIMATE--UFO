@@ -986,7 +986,7 @@ def keyboardListener(key, x, y):
     if game_over:
         if key == b'r':
             ufo_x = 0
-            ufo_y = GRID_LENGTH - 180
+            ufo_y = GRID_LENGTH - 50  # Reset to original starting position
             score = 0
             health = 100
             game_over = False
