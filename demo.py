@@ -831,7 +831,20 @@ def idle():
                 score += 5  # Bonus points for hitting boss
                 if boss_health <= 0 and not boss_reward_given:
                     boss_active = False
-                    score += get_boss_defeat_reward(level)
+                    # Health reward by level range
+                    if 2 <= level <= 5:
+                        health_reward = 20
+                    elif 6 <= level <= 10:
+                        health_reward = 40
+                    elif 11 <= level <= 15:
+                        health_reward = 60
+                    elif 16 <= level <= 19:
+                        health_reward = 80
+                    elif level == 20:
+                        health_reward = 100
+                    else:
+                        health_reward = 20
+                    health = min(100, health + health_reward)
                     boss_health = 100  # Reset for next boss
                     boss_reward_given = True
                 break
