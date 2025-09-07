@@ -1,3 +1,4 @@
+last_level = 1  # Track previous level for boss spawn reset
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -644,14 +645,15 @@ def idle():
             four_x_start_time = 0
     
     # Leveling system: update level based on score
-    prev_level = level
+    global last_level
     level = min(max_level, score // 50 + 1)
     difficulty_level = level
 
     # Reset boss spawn for every new level (from level 2+)
-    if level >= 2 and level != prev_level:
+    if level >= 2 and level != last_level:
         boss_spawned_this_level = False
         boss_next_spawn_score = 0
+    last_level = level
 
     # Boss spawn logic
     if level >= 2:
