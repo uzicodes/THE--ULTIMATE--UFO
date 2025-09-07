@@ -693,7 +693,6 @@ def idle():
                 spawn_boss()
                 boss_active = True
                 boss_spawned_this_level = True
-                global boss_reward_given
                 boss_reward_given = False  # Reset reward flag only when new boss spawns
     else:
         boss_active = False
@@ -825,7 +824,10 @@ def idle():
                     percent = 0.05
                 else:
                     percent = 0.25  # Default for safety
-                boss_health = max(0, boss_health - int(boss_health * percent))
+                damage = int(boss_health * percent)
+                if damage < 1:
+                    damage = 1
+                boss_health = max(0, boss_health - damage)
                 score += 5  # Bonus points for hitting boss
                 if boss_health <= 0 and not boss_reward_given:
                     boss_active = False
