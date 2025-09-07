@@ -260,7 +260,19 @@ def spawn_boss():
             boss_x = ufo_x
             boss_y = -ufo_y  # Place boss at the exact opposite Y position of the UFO
             boss_z = 50
-            boss_health = 50 + (level * 25)  # Boss gets stronger with level
+            # Set boss health by level range for gradual difficulty
+            if 2 <= level <= 5:
+                boss_health = 40
+            elif 6 <= level <= 10:
+                boss_health = 80
+            elif 11 <= level <= 15:
+                boss_health = 120
+            elif 16 <= level <= 19:
+                boss_health = 160
+            elif level == 20:
+                boss_health = 200
+            else:
+                boss_health = 40  # Default for safety
             boss_spawn_timer = 0
             # Adjust boss shooting frequency based on level (faster shooting at higher levels)
             boss_shoot_interval = max(60, 180 - (level * 10))  # Minimum 60 frames, decreases with level
