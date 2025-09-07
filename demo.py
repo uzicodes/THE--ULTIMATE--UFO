@@ -1091,3 +1091,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#to see if theres no problem at all: 
+for i in range(3): print(i)
