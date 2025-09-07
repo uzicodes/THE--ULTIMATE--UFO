@@ -294,19 +294,19 @@ def boss_shoots_at_ufo():
     length = math.sqrt(dir_x**2 + dir_y**2 + dir_z**2)
     if length == 0:
         length = 1  # Prevent division by zero
-    # Set boss bullet speed by level range
+    # Set boss bullet speed by level range (reduced for easier gameplay)
     if 2 <= level <= 5:
-        speed = 8
+        speed = 3
     elif 6 <= level <= 10:
-        speed = 10
+        speed = 4
     elif 11 <= level <= 15:
-        speed = 12
+        speed = 5
     elif 16 <= level <= 19:
-        speed = 14
+        speed = 6
     elif level == 20:
-        speed = 16
+        speed = 7
     else:
-        speed = 8  # Default for safety
+        speed = 3  # Default for safety
     dx = dir_x / length * speed
     dy = dir_y / length * speed
     dz = dir_z / length * speed
@@ -693,6 +693,8 @@ def idle():
                 spawn_boss()
                 boss_active = True
                 boss_spawned_this_level = True
+                global boss_reward_given
+                boss_reward_given = False  # Reset reward flag only when new boss spawns
     else:
         boss_active = False
         boss_spawned_this_level = False
@@ -830,8 +832,6 @@ def idle():
                     score += get_boss_defeat_reward(level)
                     boss_health = 100  # Reset for next boss
                     boss_reward_given = True
-                if boss_health > 0:
-                    boss_reward_given = False
                 break
     
     # Boss bullet-UFO collision and health reduction
