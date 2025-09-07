@@ -780,7 +780,20 @@ def idle():
             boss_distance = ((bullet.x - boss_x)**2 + (bullet.y - boss_y)**2 + (bullet.z - boss_z)**2)**0.5
             if boss_distance < 80:  # Boss is larger, so larger collision radius
                 bullets.remove(bullet)
-                boss_health -= 10  # Each bullet does 10 damage to boss
+                # Reduce boss health by correct percentage based on level group
+                if 2 <= level <= 5:
+                    percent = 0.25
+                elif 6 <= level <= 10:
+                    percent = 0.20
+                elif 11 <= level <= 15:
+                    percent = 0.15
+                elif 16 <= level <= 19:
+                    percent = 0.10
+                elif level == 20:
+                    percent = 0.05
+                else:
+                    percent = 0.25  # Default for safety
+                boss_health = max(0, boss_health - int(boss_health * percent))
                 score += 5  # Bonus points for hitting boss
                 if boss_health <= 0:
                     boss_active = False
