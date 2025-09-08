@@ -386,7 +386,19 @@ def draw_bomb(bomb):
     # Set bomb color - pure black
     glColor3f(0, 0, 0)
     # Main bomb body (sphere)
-    glutSolidSphere(25, 10, 10)
+    glutSolidSphere(25, 20, 20)
+    # Add white highlight (small sphere offset)
+    glPushMatrix()
+    glTranslatef(10, 10, 15)
+    glColor3f(1, 1, 1)
+    glutSolidSphere(7, 12, 12)
+    glPopMatrix()
+    # Add a white stripe around the bomb
+    glPushMatrix()
+    glRotatef(90, 1, 0, 0)
+    glColor3f(1, 1, 1)
+    glutSolidTorus(2, 18, 10, 24)
+    glPopMatrix()
     # Add some spikes/details to make it look dangerous
     glColor3f(0, 0, 0)
     # Top spike
