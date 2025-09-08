@@ -15,14 +15,14 @@ GRID_LENGTH = 600
 # Player UFO variables
 star_positions = [(random.randint(-GRID_LENGTH, GRID_LENGTH), random.randint(GRID_LENGTH + 50, WINDOW_HEIGHT - 10)) for _ in range(NUM_STARS)]
 ufo_x = 0
-ufo_y = GRID_LENGTH - 50  # Lower UFO closer to the grid 
+ufo_y = GRID_LENGTH - 50  # closer to the grid 
 ufo_z = 50
 ufo_speed = 15
 
 # Camera variables
 camera_pos = (0, 500, 500)
 fovY = 120
-camera_mode_3d = False  # Toggle between 2D overhead and 3D pilot view
+camera_mode_3d = False  # Toggle on 2D overhead and 3D pilot view
 
 # Game objects
 bullets = []
@@ -39,11 +39,12 @@ boss_y = -GRID_LENGTH + 50  # Opposite side of the grid from UFO
 boss_z = 50
 boss_health = 100
 boss_shoot_timer = 0
-boss_shoot_interval = 120  # Boss shoots every 120 frames (about 2 seconds at 60fps)
+boss_shoot_interval = 120  # Boss shoots every 2sec-60fps
 boss_spawn_timer = 0
 boss_last_ufo_x = 0  # Track UFO position for predictive shooting
 boss_spawned_this_level = False
 boss_next_spawn_score = 0
+
 
 # Game state
 score = 0
@@ -58,11 +59,14 @@ level = 1  # Add level variable
 max_level = 20
 last_level = 1  # Track previous level for boss spawn reset
 
+
 # 4x Shooting power-up variables
 four_x_active = False
 four_x_timer = 0
 four_x_start_time = 0
-four_x_duration = 10  # 10 seconds, real time
+four_x_duration = 10  # 10 seconds
+
+
 
 # Bullet class
 class Bullet:
@@ -72,6 +76,7 @@ class Bullet:
         self.z = z
         self.speed = 20
         self.active = True
+
 
 # Boss Bullet class
 class BossBullet:
@@ -83,15 +88,17 @@ class BossBullet:
         self.dy = dy
         self.dz = dz
 
+
 # Diamond class
 class Diamond:
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
-        self.speed = 0.7  # Much slower falling speed
+        self.speed = 0.7  # slower falling speed
         self.rotation = 0
         self.active = True
+
 
 # Bomb class
 class Bomb:
@@ -99,7 +106,7 @@ class Bomb:
         self.x = x
         self.y = y
         self.z = z
-        self.speed = 0.7  # Same base speed as diamonds
+        self.speed = 0.7  # Same speed as diamonds
         self.rotation = 0
         self.active = True
 
@@ -109,9 +116,11 @@ class Heart:
         self.x = x
         self.y = y
         self.z = z
-        self.speed = 0.7  # Same as diamonds and bombs
+        self.speed = 0.7  # Same as diamonds & bombs
         self.rotation = 0
         self.active = True
+
+
 
 # Gift class for 4x shooting power-up
 class Gift:
@@ -124,7 +133,7 @@ class Gift:
         self.active = True
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
-    # Use the current color set by the caller
+    
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
@@ -143,8 +152,12 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
+
+
+
+
 def draw_boss():
-    """Draw the boss enemy with purple color #a742f5"""
+    
     glPushMatrix()
     glTranslatef(boss_x, boss_y, boss_z)
     
@@ -153,7 +166,7 @@ def draw_boss():
     boss_g = 0x42 / 255.0  # 66/255
     boss_b = 0xf5 / 255.0  # 245/255
     
-    # Main boss body - larger and more intimidating than player UFO
+    # Main boss body - larger than player UFO
     glColor3f(boss_r, boss_g, boss_b)
     
     # Boss main dome (larger than player)
@@ -217,7 +230,7 @@ def draw_boss():
     glutSolidSphere(15, 10, 10)
     glPopMatrix()
     
-    # Additional menacing spikes around the boss
+    # spikes around the boss
     glColor3f(boss_r * 0.6, boss_g * 0.6, boss_b * 0.6)
     
     # Front spikes
@@ -233,33 +246,43 @@ def draw_boss():
     
     glPopMatrix()
 
+
+
+
+
+
 def draw_boss_bullet(bullet):
-    """Draw boss bullets - different from player bullets"""
+    
     glPushMatrix()
     glTranslatef(bullet.x, bullet.y, bullet.z)
-    glColor3f(1, 0, 0)  # Red boss bullets
-    # Make boss bullets larger and more menacing
+    glColor3f(1, 0, 0)  # Red boss bullets (larger)
+
     glutSolidSphere(10, 8, 8)
     
-    # Add some glowing effect around the bullet
+    #glowing effect around the bullet
     glColor3f(1, 0.5, 0.5)
     glutWireSphere(12, 6, 6)
     
     glPopMatrix()
 
+
+
+
 def spawn_boss():
-    """Spawn the boss at a random time during levels 2+"""
+    
     global boss_active, boss_x, boss_y, boss_z, boss_health, boss_spawn_timer, boss_shoot_interval
     
     if level >= 2 and not boss_active:
         # Random chance to spawn boss (increases with level)
-        spawn_chance = (level - 1) * 0.001  # 0.1% at level 2, 0.2% at level 3, etc.
+        spawn_chance = (level - 1) * 0.001  # 0.1% at level 2, 0.2% at level 3.....
         if random.random() < spawn_chance:
             boss_active = True
             boss_x = ufo_x
-            boss_y = -ufo_y  # Place boss at the exact opposite Y position of the UFO
+            boss_y = -ufo_y  # boss at  opposite position of the UFO
             boss_z = 50
-            # Set boss health by level range for gradual difficulty
+
+
+            # Set BOSS HEALTH by level range difficulty
             if 2 <= level <= 5:
                 boss_health = 40
             elif 6 <= level <= 10:
@@ -273,26 +296,29 @@ def spawn_boss():
             else:
                 boss_health = 40  # Default for safety
             boss_spawn_timer = 0
-            # Adjust boss shooting frequency based on level (faster shooting at higher levels)
+            # boss shooting frequency (faster shooting at higher levels)
             boss_shoot_interval = max(60, 180 - (level * 10))  # Minimum 60 frames, decreases with level
+
+
 
 def update_boss():
     global boss_x
-    # Boss only tracks UFO's X position (left/right), not Y or Z
+    # Boss tracks UFO's X position (left/right), 
     if boss_x < ufo_x:
         boss_x = min(boss_x + ufo_speed, ufo_x)
     elif boss_x > ufo_x:
         boss_x = max(boss_x - ufo_speed, ufo_x)
-    # Boss stays at fixed Y (opposite of UFO) and fixed Z
+    # Boss stays at fixed Y 
+
 
 def boss_shoots_at_ufo():
-    # Calculate direction from boss to UFO
+    # direction from boss to UFO
     dir_x = ufo_x - boss_x
     dir_y = ufo_y - boss_y
     dir_z = ufo_z - boss_z
     length = math.sqrt(dir_x**2 + dir_y**2 + dir_z**2)
     if length == 0:
-        length = 1  # Prevent division by zero
+        length = 1  
     # Set boss bullet speed by level range (reduced for easier gameplay)
     if 2 <= level <= 5:
         speed = 3
@@ -311,6 +337,7 @@ def boss_shoots_at_ufo():
     dz = dir_z / length * speed
     boss_bullets.append(BossBullet(boss_x, boss_y, boss_z, dx, dy, dz))
 
+
 def update_boss_bullets():
     for bullet in boss_bullets[:]:
         bullet.x += bullet.dx
@@ -320,56 +347,58 @@ def update_boss_bullets():
         if (abs(bullet.x) > GRID_LENGTH + 100 or abs(bullet.y) > GRID_LENGTH + 100 or bullet.z < 0 or bullet.z > WINDOW_HEIGHT):
             boss_bullets.remove(bullet)
 
+
+
 def draw_diamond(diamond):
     glPushMatrix()
     glTranslatef(diamond.x, diamond.y, diamond.z)
     glRotatef(diamond.rotation, 1, 1, 0)  # Rotate around x and y axis
     
-    # Set diamond color 
+    #color 
     glColor3f(0, 0.8, 1)
     
-    # Create diamond shape using two pyramids 
+    # Create diamond shape using Two Pyramids 
+    
     # Top pyramid
     glBegin(GL_TRIANGLES)
-    # Front face
+    # Front 
     glVertex3f(0, 0, 35)    # top point (increased from 30)
     glVertex3f(-25, -18, 0) # bottom left (increased from -20, -15)
     glVertex3f(25, -18, 0)  # bottom right (increased from 20, -15)
-    
-    # Right face
+    # Right 
     glVertex3f(0, 0, 35)    # top point
     glVertex3f(25, -18, 0)  # front right
     glVertex3f(0, -30, 0)   # back point (increased from -25)
-    
-    # Back face
+    # Back
     glVertex3f(0, 0, 35)    # top point
     glVertex3f(0, -30, 0)   # back point
     glVertex3f(-25, -18, 0) # front left
-    
-    # Left face
+    # Left 
     glVertex3f(0, 0, 35)    # top point
     glVertex3f(-25, -18, 0) # front left
     glVertex3f(25, -18, 0)  # front right
     glEnd()
     
+
+
     # Bottom pyramid
     glBegin(GL_TRIANGLES)
-    # Front face
+    # Front f
     glVertex3f(0, 0, -35)   # bottom point (increased from -30)
     glVertex3f(25, -18, 0)  # top right
     glVertex3f(-25, -18, 0) # top left
     
-    # Right face
+    # Right
     glVertex3f(0, 0, -35)   # bottom point
     glVertex3f(0, -30, 0)   # back point
     glVertex3f(25, -18, 0)  # front right
     
-    # Back face
+    # Back 
     glVertex3f(0, 0, -35)   # bottom point
     glVertex3f(-25, -18, 0) # front left
     glVertex3f(0, -30, 0)   # back point
     
-    # Left face
+    # Left 
     glVertex3f(0, 0, -35)   # bottom point
     glVertex3f(-25, -18, 0) # front left
     glVertex3f(25, -18, 0)  # front right
@@ -377,16 +406,20 @@ def draw_diamond(diamond):
     
     glPopMatrix()
 
+
+
+
+
 def draw_bomb(bomb):
     glPushMatrix()
     glTranslatef(bomb.x, bomb.y, bomb.z)
     glRotatef(bomb.rotation, 0, 0, 1)  # Rotate around z axis for bombs
     
-    # Set bomb color - pure black
+    #bomb color black
     glColor3f(0, 0, 0)
     # Main bomb body (sphere)
     glutSolidSphere(25, 20, 20)
-    # Add white highlight (small sphere offset)
+    # Add white highlight (visible)
     glPushMatrix()
     glTranslatef(10, 10, 15)
     glColor3f(1, 1, 1)
@@ -398,6 +431,7 @@ def draw_bomb(bomb):
     glColor3f(1, 1, 1)
     glutSolidTorus(2, 18, 10, 24)
     glPopMatrix()
+    
     # Add some spikes/details to make it look dangerous
     glColor3f(0, 0, 0)
     # Top spike
@@ -436,17 +470,23 @@ def draw_bomb(bomb):
     
     glPopMatrix()
 
+
+
+
+
+
+
 def draw_gift(gift):
     glPushMatrix()
     glTranslatef(gift.x, gift.y, gift.z)
     glRotatef(gift.rotation, 1, 1, 1)  # Rotate around all axes for a spinning effect
     
     # Main gift box - golden color
-    glColor3f(1, 0.8, 0)  # Gold color
+    glColor3f(1, 0.8, 0)  
     glutSolidCube(30)
     
     # Gift ribbon - red color
-    glColor3f(1, 0, 0)  # Red color
+    glColor3f(1, 0, 0)  
     
     # Horizontal ribbon
     glPushMatrix()
@@ -467,8 +507,8 @@ def draw_gift(gift):
     glutSolidSphere(8, 8, 8)
     glPopMatrix()
     
-    # "4X" text indicator - draw small cubes to represent 4X
-    glColor3f(1, 1, 0)  # Yellow for visibility
+    # draw small cubes to represent 4X
+    glColor3f(1, 1, 0)  # Yellow 
     
     # Draw small indicator cubes around the gift
     positions = [(-20, -20, 0), (20, -20, 0), (-20, 20, 0), (20, 20, 0)]
@@ -479,6 +519,12 @@ def draw_gift(gift):
         glPopMatrix()
     
     glPopMatrix()
+
+
+
+
+
+
 
 def draw_ufo():
     glPushMatrix()
@@ -515,8 +561,8 @@ def draw_ufo():
     glutSolidCube(60)
     glPopMatrix()
     
-    # Small rectangular details on wings (yellow boxes from sketch)
-    # If 4x shooting is active, make them glow brighter
+    # Small rectangular details on wings (yellow boxes)
+    
     if four_x_active:
         glColor3f(1, 1, 0.2)  # Brighter yellow when 4x is active
     else:
@@ -568,6 +614,10 @@ def draw_ufo():
     
     glPopMatrix()
 
+
+
+
+
 def draw_bullet(bullet):
     glPushMatrix()
     glTranslatef(bullet.x, bullet.y, bullet.z)
@@ -575,14 +625,22 @@ def draw_bullet(bullet):
     glutSolidSphere(6, 8, 8)  # Bigger bullet size (increased from 3 to 6)
     glPopMatrix()
 
+
+
+
+
+
 def draw_heart(heart):
     glPushMatrix()
     glTranslatef(heart.x, heart.y, heart.z)
     glRotatef(heart.rotation, 0, 0, 1)
-    glColor3f(1, 0, 0)  # Red color
-    # Draw heart as a 3D red sphere (circular heart)
+    glColor3f(1, 0, 0)  # 
+    # (circular heart)
     glutSolidSphere(15, 16, 16)
     glPopMatrix()
+
+
+
 
 def is_spawn_position_clear(x, y, z, min_dist=60):
     for obj in diamonds + bombs + hearts + gifts:
@@ -591,9 +649,12 @@ def is_spawn_position_clear(x, y, z, min_dist=60):
             return False
     return True
 
+
+
+
 def spawn_diamond():
     global diamond_spawn_counter
-    for _ in range(10):  # Try up to 10 times to find a clear spot
+    for _ in range(10):  # 10 times to find a clear spot to spawn
         x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
         y = -GRID_LENGTH + 20
         z = random.randint(15, 80)
@@ -601,6 +662,9 @@ def spawn_diamond():
             diamonds.append(Diamond(x, y, z))
             diamond_spawn_counter += 1
             return
+
+
+
 
 def spawn_bomb():
     for _ in range(10):
@@ -611,6 +675,10 @@ def spawn_bomb():
             bombs.append(Bomb(x, y, z))
             return
 
+
+
+
+
 def spawn_heart():
     for _ in range(10):
         x = random.randint(-GRID_LENGTH + 30, GRID_LENGTH - 30)
@@ -619,6 +687,9 @@ def spawn_heart():
         if is_spawn_position_clear(x, y, z):
             hearts.append(Heart(x, y, z))
             return
+
+
+
 
 def spawn_gift():
     for _ in range(10):
@@ -629,10 +700,15 @@ def spawn_gift():
             gifts.append(Gift(x, y, z))
             return
 
+
+
+
+
+
 def shoot_bullets():
-    """Shoot bullets based on current power-up state"""
+    
     if four_x_active:
-        # Shoot from all 4 positions: 2 head shooters + 2 wing shooters
+        # Shoot from all: 2 head shooters + 2 wing shooters
         # Head shooters (front of UFO)
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
@@ -644,15 +720,21 @@ def shoot_bullets():
         bullets.append(Bullet(ufo_x - 15, ufo_y + 40, ufo_z + 5))
         bullets.append(Bullet(ufo_x + 15, ufo_y + 40, ufo_z + 5))
 
+
+
+
+
 def idle():
-    # ...existing code...
+    
     global boss_reward_given
     if 'boss_reward_given' not in globals():
         boss_reward_given = False
-    # ...existing code...
-    # Place UFO-bomb and UFO-heart collision logic here, after global declarations
+    
+    # Place UFO-bomb & UFO-heart collision logic 
     global health, game_over
-    # UFO-bomb collision: decrease health by 10% for each bomb hit
+
+
+    # UFO-BOMB collision: Decrease health by 10% for each bomb hit
     for bomb in bombs[:]:
         ufo_distance = ((ufo_x - bomb.x)**2 + (ufo_y - bomb.y)**2 + (ufo_z - bomb.z)**2)**0.5
         if ufo_distance < 50:  # Adjust radius as needed for your UFO/bomb size
@@ -661,10 +743,12 @@ def idle():
             if health <= 0:
                 game_over = True
 
-    # UFO-heart collision: increase health by 10% for each heart collected
+
+
+    # UFO-HEART collision: increase health by 10% for each heart collected
     for heart in hearts[:]:
         ufo_distance = ((ufo_x - heart.x)**2 + (ufo_y - heart.y)**2 + (ufo_z - heart.z)**2)**0.5
-        if ufo_distance < 50:  # Adjust radius as needed for your UFO/heart size
+        if ufo_distance < 50:  
             hearts.remove(heart)
             health = min(100, health + 10)
     global spawn_timer, score, level, difficulty_level, bomb_spawn_counter, heart_spawn_counter
@@ -672,7 +756,9 @@ def idle():
     global boss_active, boss_spawned_this_level, boss_next_spawn_score
     global boss_health, boss_x, boss_y, boss_z, boss_shoot_timer, boss_shoot_interval
     
-    # IMPORTANT: If game is over, only update the display - don't update any game logic
+
+
+    # If game is over, only update the display - don't update any game logic
     if game_over:
         glutPostRedisplay()
         return
@@ -698,21 +784,25 @@ def idle():
     if level >= 2:
         if not boss_active and not boss_spawned_this_level:
             if boss_next_spawn_score == 0:
-                # Pick a random score offset for boss spawn in this level
+                # random score for boss spawn in this level
                 boss_next_spawn_score = score + random.randint(10, 40)
             if score >= boss_next_spawn_score:
                 spawn_boss()
                 boss_active = True
                 boss_spawned_this_level = True
-                boss_reward_given = False  # Reset reward flag only when new boss spawns
+                boss_reward_given = False  # Reset flag only when new boss spawns
     else:
         boss_active = False
         boss_spawned_this_level = False
         boss_next_spawn_score = 0
         
+
+
+
     # Spawn diamonds, bombs, hearts, and gifts
     spawn_timer += 1
-    spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels & more frequent diamonds
+    spawn_interval = max(1000 - (level - 1) * 60, 200)  # Faster spawn for higher levels & frequent diamonds
+
     if spawn_timer >= random.randint(spawn_interval, spawn_interval + 300):
         spawn_diamond()
         bomb_spawn_counter += 1
@@ -782,6 +872,7 @@ def idle():
         if heart.y > GRID_LENGTH:
             hearts.remove(heart)
     
+
     # Update gifts with same speed as other objects
     gift_speed = 0.15 + (level - 1) * 0.1
     for gift in gifts[:]:
@@ -793,6 +884,7 @@ def idle():
         if gift.y > GRID_LENGTH:
             gifts.remove(gift)
     
+
     # Bullet-diamond collision and scoring
     for bullet in bullets[:]:
         for diamond in diamonds[:]:
@@ -802,6 +894,8 @@ def idle():
                 diamonds.remove(diamond)
                 score += 2
                 break
+
+
     
     # Bullet-bomb collision and penalty
     for bullet in bullets[:]:
@@ -816,6 +910,8 @@ def idle():
                     game_over = True
                 break
     
+
+
     # Player bullet-boss collision
     if boss_active:
         for bullet in bullets[:]:
@@ -860,7 +956,10 @@ def idle():
                     boss_reward_given = True
                 break
     
-    # Boss bullet-UFO collision and health reduction
+
+
+
+    # Boss bullet-UFO collision & health reduction
     for bullet in boss_bullets[:]:
         # Check collision with UFO body
         ufo_distance = ((ufo_x - bullet.x)**2 + (ufo_y - bullet.y)**2 + (ufo_z - bullet.z)**2)**0.5
@@ -883,6 +982,8 @@ def idle():
                 game_over = True
             break
     
+
+
     # Bullet-heart collision & health gain
     for bullet in bullets[:]:
         for heart in hearts[:]:
@@ -892,6 +993,9 @@ def idle():
                 hearts.remove(heart)
                 health = min(100, health + 10)  # Gain 10 health, max 100
                 break
+
+
+
 
     # Bullet-gift collision (activate 4x shooting)
     for bullet in bullets[:]:
@@ -906,6 +1010,16 @@ def idle():
                 break
     
     glutPostRedisplay()
+
+
+
+
+
+
+
+
+
+
 
 def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -953,12 +1067,14 @@ def showScreen():
         glVertex3f(GRID_LENGTH, i, 1)
     glEnd()
     
+
     # Draw game objects
     if not game_over:
         # In 3D pilot view
         if not camera_mode_3d:
             draw_ufo()
     
+
     # Draw boss if active
     if boss_active:
         draw_boss()
@@ -985,24 +1101,24 @@ def showScreen():
 
     # Draw UI
     camera_mode_text = ("3D Pilot View (C)" if camera_mode_3d else "Overhead View (C)")
-    # Draw 'Your Score:' in white, then value in yellow
+    # Draw 'Your Score:' 
     score_label = "Your Score: "
     score_value = f"{score}"
     glColor3f(1, 1, 1)
     draw_text(10, 770, score_label)
     glColor3f(1, 1, 0)
     draw_text(10 + len(score_label)*9, 770, score_value)
-    # Draw 'Health:' in white, then value and % in red
+    # Draw 'Health:' 
     health_label = "Health: "
     health_value = f"{health}%"
     # Draw label in white
     glColor3f(1, 1, 1)
     draw_text(10, 740, health_label)
-    # Draw value in red, offset by label width (estimate 9px per char)
+    # Draw health value RED
     glColor3f(1, 0, 0)
     draw_text(10 + len(health_label)*9, 740, health_value)
     glColor3f(1, 1, 1)
-    # Draw 'Level:' in white, then value in purple (#A927F5)
+    
     level_label = "Level: "
     level_value = f"{level}"
     glColor3f(1, 1, 1)
@@ -1011,12 +1127,14 @@ def showScreen():
     draw_text(10 + len(level_label)*9, 710, level_value)
     glColor3f(1, 1, 1)
     draw_text(10, 680, f"Camera: {camera_mode_text}")
-    
+
+
     # Boss status
     if boss_active:
         draw_text(10, 560, f"BOSS ACTIVE! Health: {boss_health}")
         draw_text(10, 530, "Boss is tracking you and shooting!")
     
+
     # 4x shooting status
     if four_x_active:
         remaining_time = max(0, int(four_x_duration - (time.time() - four_x_start_time)))
@@ -1035,23 +1153,28 @@ def showScreen():
     
     glutSwapBuffers()
 
+
+
+
+
+
+
+
+
 def setupCamera():
-    """
-    Configures the camera's projection and view settings.
-    Uses a perspective projection and positions the camera to look at the target.
-    """
+
     glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
     glLoadIdentity()  # Reset the projection matrix
     
     if camera_mode_3d:
-        # 3D pilot view - narrower field of view for more realistic perspective
+        # 3D pilot view - narrower fov (realistic)
         gluPerspective(75, 1.25, 0.1, 1500)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         # Pilot view: camera behind and above UFO, looking toward falling diamonds
         gluLookAt(ufo_x, ufo_y + 120, ufo_z + 60,  # Camera behind and above UFO, facing diamonds
                   ufo_x, ufo_y - 100, ufo_z,      # Look toward falling diamonds
-                  0, 0, 1)                        # Up vector
+                  0, 0, 1)                        
     else:
         # Overhead view - original camera position
         gluPerspective(fovY, 1.25, 0.1, 1500)
@@ -1059,6 +1182,12 @@ def setupCamera():
         glLoadIdentity()
         x, y, z = camera_pos
         gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
+
+
+
+
+
+
 
 def keyboardListener(key, x, y):
     global ufo_x, ufo_y, game_over, score, health, bullets, spawn_timer, difficulty_level, diamonds, bombs, camera_mode_3d, bomb_spawn_counter, diamond_spawn_counter, four_x_active, four_x_timer, hearts, gifts
@@ -1091,9 +1220,9 @@ def keyboardListener(key, x, y):
     # Toggle camera mode with 'C' key
     if key == b'c':
         camera_mode_3d = not camera_mode_3d
-    # UFO stays at the bottom, only allow left/right movement
+    # UFO at the bottom, only allow left/right movement
     moved = False
-    margin = 15  # Allow UFO to reach closer to grid edge
+    margin = 15  # UFO closer to grid edge
     if key == b'a':
         if ufo_x < GRID_LENGTH - margin:
             ufo_x += ufo_speed
@@ -1106,10 +1235,14 @@ def keyboardListener(key, x, y):
     if key == b' ':
         shoot_bullets()
 
+
+
+
+
+
+
 def specialKeyListener(key, x, y):
-    """
-    Handles special key inputs (arrow keys) for UFO movement.
-    """
+
     global ufo_x, ufo_y
     margin = 15
     if game_over:
@@ -1121,13 +1254,22 @@ def specialKeyListener(key, x, y):
         if ufo_x > -GRID_LENGTH + margin:
             ufo_x -= ufo_speed
 
+
+
+
+
+
+
 def mouseListener(button, state, x, y):
-    """
-    Handles mouse inputs for firing bullets (left click).
-    """
+
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN and not game_over:
-        # Fire bullets using the new shooting system
         shoot_bullets()
+
+
+
+
+
+
 
 def get_boss_damage_percent(level):
     if 2 <= level <= 5:
@@ -1142,6 +1284,13 @@ def get_boss_damage_percent(level):
         return 0.05
     return 0.25  # Default for safety
 
+
+
+
+
+
+
+
 def get_boss_bullet_damage_percent(level):
     if 2 <= level <= 5:
         return 0.05
@@ -1155,6 +1304,11 @@ def get_boss_bullet_damage_percent(level):
         return 0.25
     return 0.05  # Default for safety
 
+
+
+
+
+
 def get_boss_defeat_reward(level):
     if 2 <= level <= 5:
         return 20
@@ -1167,6 +1321,11 @@ def get_boss_defeat_reward(level):
     elif level == 20:
         return 100
     return 20  # Default for safety
+
+
+
+
+
 
 def main():
     glutInit()
