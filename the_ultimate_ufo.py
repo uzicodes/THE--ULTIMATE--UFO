@@ -1,4 +1,3 @@
-last_level = 1  # Track previous level for boss spawn reset
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -9,7 +8,6 @@ import time
 
 # Game variables
 NUM_STARS = 100
-
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
 GRID_LENGTH = 600
@@ -58,6 +56,7 @@ diamond_spawn_counter = 0  # Counter for diamonds spawned
 difficulty_level = 1
 level = 1  # Add level variable
 max_level = 20
+last_level = 1  # Track previous level for boss spawn reset
 
 # 4x Shooting power-up variables
 four_x_active = False
@@ -125,7 +124,7 @@ class Gift:
         self.active = True
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
-    glColor3f(1, 1, 1)
+    # Use the current color set by the caller
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
@@ -985,10 +984,32 @@ def showScreen():
 
 
     # Draw UI
-    camera_mode_text = "3D Pilot View" if camera_mode_3d else "Overhead View"
-    draw_text(10, 770, f"Your Score: {score}")
-    draw_text(10, 740, f"Health: {health}%")
-    draw_text(10, 710, f"Level: {level}")
+    camera_mode_text = ("3D Pilot View (C)" if camera_mode_3d else "Overhead View (C)")
+    # Draw 'Your Score:' in white, then value in yellow
+    score_label = "Your Score: "
+    score_value = f"{score}"
+    glColor3f(1, 1, 1)
+    draw_text(10, 770, score_label)
+    glColor3f(1, 1, 0)
+    draw_text(10 + len(score_label)*9, 770, score_value)
+    # Draw 'Health:' in white, then value and % in red
+    health_label = "Health: "
+    health_value = f"{health}%"
+    # Draw label in white
+    glColor3f(1, 1, 1)
+    draw_text(10, 740, health_label)
+    # Draw value in red, offset by label width (estimate 9px per char)
+    glColor3f(1, 0, 0)
+    draw_text(10 + len(health_label)*9, 740, health_value)
+    glColor3f(1, 1, 1)
+    # Draw 'Level:' in white, then value in purple (#A927F5)
+    level_label = "Level: "
+    level_value = f"{level}"
+    glColor3f(1, 1, 1)
+    draw_text(10, 710, level_label)
+    glColor3f(0xA9/255.0, 0x27/255.0, 0xF5/255.0)
+    draw_text(10 + len(level_label)*9, 710, level_value)
+    glColor3f(1, 1, 1)
     draw_text(10, 680, f"Camera: {camera_mode_text}")
     
     # Boss status
@@ -1000,12 +1021,12 @@ def showScreen():
     if four_x_active:
         remaining_time = max(0, int(four_x_duration - (time.time() - four_x_start_time)))
         draw_text(10, 650, f"4X SHOOTING ACTIVE! Time: {remaining_time}s")
-        draw_text(10, 620, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot (4X!), C to toggle camera")
+        draw_text(10, 620, "Controls: AD/Arrow Keys to move, Space/Mouse to Shoot (4X!)")
     else:
-        draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to shoot, C to toggle camera")
-        pass  
+        draw_text(10, 650, "Controls: AD/Arrow Keys to move, Space/Mouse to Shoot !")
+        pass
     
-    draw_text(10, 590, "WARNING: Avoid shooting bombs! Collect golden gifts for 4X shooting!")
+    
     
     if game_over:
         draw_text(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT//2, "GAME OVER!")
