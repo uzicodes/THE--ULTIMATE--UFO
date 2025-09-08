@@ -1289,8 +1289,6 @@ def get_boss_damage_percent(level):
 
 
 
-
-
 def get_boss_bullet_damage_percent(level):
     if 2 <= level <= 5:
         return 0.05
