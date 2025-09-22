@@ -566,22 +566,44 @@ def draw_ufo():
     glPushMatrix()
     glTranslatef(ufo_x, ufo_y, ufo_z)
     
-    # Main UFO body (dome)
-    glColor3f(0.8, 0.8, 0.9)
+    # Enable blending for glowing effects
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    
+    # Main UFO body (dome) - polished metallic silver
+    glColor3f(0.9, 0.9, 1.0)  # Bright metallic silver
     glPushMatrix()
     glTranslatef(0, 0, 20)
     gluSphere(gluNewQuadric(), 40, 10, 10)
     glPopMatrix()
     
-    # UFO base/disk
-    glColor3f(0.6, 0.6, 0.8)
+    # Add metallic highlights on dome
+    glColor3f(1.0, 1.0, 1.0)  # Bright white highlights
+    glPushMatrix()
+    glTranslatef(-15, 15, 35)
+    glutSolidSphere(8, 8, 8)
+    glPopMatrix()
+    glPushMatrix()
+    glTranslatef(20, -10, 38)
+    glutSolidSphere(6, 8, 8)
+    glPopMatrix()
+    
+    # UFO base/disk - darker metallic with blue glow
+    glColor3f(0.4, 0.5, 0.8)  # Metallic blue-gray
     glPushMatrix()
     glScalef(1, 1, 0.3)
     gluSphere(gluNewQuadric(), 60, 15, 8)
     glPopMatrix()
     
-    # Wing extensions (left and right)
-    glColor3f(0.7, 0.7, 0.85)
+    # Add glowing ring around the base
+    glColor4f(0.2, 0.6, 1.0, 0.6)  # Glowing blue ring
+    glPushMatrix()
+    glTranslatef(0, 0, -5)
+    glutSolidTorus(3, 65, 16, 32)
+    glPopMatrix()
+    
+    # Wing extensions (left and right) - enhanced metallic
+    glColor3f(0.6, 0.7, 0.9)  # Cooler metallic tone
     
     # Left wing
     glPushMatrix()
@@ -597,47 +619,92 @@ def draw_ufo():
     glutSolidCube(60)
     glPopMatrix()
     
-    # Small rectangular details on wings (yellow boxes)
+    # Add wing highlights
+    glColor3f(1.0, 1.0, 1.0)
+    glPushMatrix()
+    glTranslatef(-80, 5, 8)
+    glutSolidSphere(4, 6, 6)
+    glPopMatrix()
+    glPushMatrix()
+    glTranslatef(80, 5, 8)
+    glutSolidSphere(4, 6, 6)
+    glPopMatrix()
     
+    # Small rectangular details on wings (enhanced with glow)
+    # If 4x shooting is active, make them glow brighter
     if four_x_active:
-        glColor3f(1, 1, 0.2)  # Brighter yellow when 4x is active
+        glColor4f(1.0, 1.0, 0.0, 0.9)  # Bright glowing yellow when 4x is active
+        # Add pulsing glow effect
+        pulse = abs(math.sin(time.time() * 8)) * 0.3 + 0.7
+        glColor4f(pulse, pulse, 0.2, 0.8)
     else:
-        glColor3f(1, 1, 0)
+        glColor3f(1, 0.8, 0)  # Regular golden color
     
-    # Left wing details (wing shooters)
+    # Left wing details (wing shooters) with glow
     glPushMatrix()
     glTranslatef(-100, 15, 5)
     glutSolidCube(8)
+    # Add glow around shooter
+    if four_x_active:
+        glColor4f(1, 1, 0.5, 0.4)
+        glutSolidCube(12)
     glPopMatrix()
     
     glPushMatrix()
     glTranslatef(-100, -15, 5)
     glutSolidCube(8)
+    if four_x_active:
+        glColor4f(1, 1, 0.5, 0.4)
+        glutSolidCube(12)
     glPopMatrix()
     
-    # Right wing details (wing shooters)
+    # Right wing details (wing shooters) with glow
+    if four_x_active:
+        pulse = abs(math.sin(time.time() * 8)) * 0.3 + 0.7
+        glColor4f(pulse, pulse, 0.2, 0.8)
+    else:
+        glColor3f(1, 0.8, 0)
+    
     glPushMatrix()
     glTranslatef(100, 15, 5)
     glutSolidCube(8)
+    if four_x_active:
+        glColor4f(1, 1, 0.5, 0.4)
+        glutSolidCube(12)
     glPopMatrix()
     
     glPushMatrix()
     glTranslatef(100, -15, 5)
     glutSolidCube(8)
+    if four_x_active:
+        glColor4f(1, 1, 0.5, 0.4)
+        glutSolidCube(12)
     glPopMatrix()
     
-    # Central details (head shooters)
+    # Central details (head shooters) with enhanced glow
+    if four_x_active:
+        glColor4f(1, 1, 0.2, 0.9)
+    else:
+        glColor3f(1, 0.9, 0)
+    
     glPushMatrix()
     glTranslatef(-15, 40, 5)
     glutSolidCube(10)
+    if four_x_active:
+        glColor4f(1, 1, 0.5, 0.5)
+        glutSolidCube(14)
     glPopMatrix()
     
     glPushMatrix()
     glTranslatef(15, 40, 5)
     glutSolidCube(10)
+    if four_x_active:
+        glColor4f(1, 1, 0.5, 0.5)
+        glutSolidCube(14)
     glPopMatrix()
     
-    # Bottom engine details
+    # Bottom engine details with blue glow
+    glColor3f(0.3, 0.5, 1.0)  # Cool blue engines
     glPushMatrix()
     glTranslatef(-20, -60, -10)
     glutSolidCube(12)
@@ -648,6 +715,34 @@ def draw_ufo():
     glutSolidCube(12)
     glPopMatrix()
     
+    # Add engine glow effects
+    glColor4f(0.4, 0.7, 1.0, 0.6)
+    glPushMatrix()
+    glTranslatef(-20, -60, -15)
+    glutSolidSphere(8, 8, 8)
+    glPopMatrix()
+    glPushMatrix()
+    glTranslatef(20, -60, -15)
+    glutSolidSphere(8, 8, 8)
+    glPopMatrix()
+    
+    # Add rotating energy rings around the UFO
+    rotation_angle = time.time() * 100  # Rotating effect
+    glColor4f(0.5, 0.8, 1.0, 0.3)
+    
+    glPushMatrix()
+    glRotatef(rotation_angle, 0, 0, 1)
+    glTranslatef(0, 0, 15)
+    glutSolidTorus(2, 50, 8, 16)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glRotatef(-rotation_angle * 0.7, 0, 0, 1)
+    glTranslatef(0, 0, 25)
+    glutSolidTorus(1.5, 35, 6, 12)
+    glPopMatrix()
+    
+    glDisable(GL_BLEND)
     glPopMatrix()
 
 
