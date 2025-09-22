@@ -354,55 +354,91 @@ def draw_diamond(diamond):
     glTranslatef(diamond.x, diamond.y, diamond.z)
     glRotatef(diamond.rotation, 1, 1, 0)  # Rotate around x and y axis
     
-    #color 
-    glColor3f(0, 0.8, 1)
+    # Enable blending for translucent effect
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
-    # Create diamond shape using Two Pyramids 
+    # Main diamond body - beautiful cyan color #61D0E8
+    glColor4f(0x61/255.0, 0xD0/255.0, 0xE8/255.0, 0.8)  # Translucent cyan
     
-    # Top pyramid
+    # Diamond crown (top part) - more realistic proportions
+    crown_height = 28  # Increased from 20
+    girdle_radius = 25  # Increased from 18
+    
+    # Crown facets (8 triangular faces)
     glBegin(GL_TRIANGLES)
-    # Front 
-    glVertex3f(0, 0, 35)    # top point (increased from 30)
-    glVertex3f(-25, -18, 0) # bottom left (increased from -20, -15)
-    glVertex3f(25, -18, 0)  # bottom right (increased from 20, -15)
-    # Right 
-    glVertex3f(0, 0, 35)    # top point
-    glVertex3f(25, -18, 0)  # front right
-    glVertex3f(0, -30, 0)   # back point (increased from -25)
-    # Back
-    glVertex3f(0, 0, 35)    # top point
-    glVertex3f(0, -30, 0)   # back point
-    glVertex3f(-25, -18, 0) # front left
-    # Left 
-    glVertex3f(0, 0, 35)    # top point
-    glVertex3f(-25, -18, 0) # front left
-    glVertex3f(25, -18, 0)  # front right
+    for i in range(8):
+        angle1 = i * 45
+        angle2 = (i + 1) * 45
+        
+        # Calculate girdle points
+        x1 = girdle_radius * math.cos(math.radians(angle1))
+        y1 = girdle_radius * math.sin(math.radians(angle1))
+        x2 = girdle_radius * math.cos(math.radians(angle2))
+        y2 = girdle_radius * math.sin(math.radians(angle2))
+        
+        # Crown facet
+        glVertex3f(0, 0, crown_height)  # Top point
+        glVertex3f(x1, y1, 0)           # Girdle point 1
+        glVertex3f(x2, y2, 0)           # Girdle point 2
     glEnd()
     
-
-
-    # Bottom pyramid
+    # Diamond pavilion (bottom part)
+    pavilion_depth = -35  # Increased from -25
+    
     glBegin(GL_TRIANGLES)
-    # Front f
-    glVertex3f(0, 0, -35)   # bottom point (increased from -30)
-    glVertex3f(25, -18, 0)  # top right
-    glVertex3f(-25, -18, 0) # top left
-    
-    # Right
-    glVertex3f(0, 0, -35)   # bottom point
-    glVertex3f(0, -30, 0)   # back point
-    glVertex3f(25, -18, 0)  # front right
-    
-    # Back 
-    glVertex3f(0, 0, -35)   # bottom point
-    glVertex3f(-25, -18, 0) # front left
-    glVertex3f(0, -30, 0)   # back point
-    
-    # Left 
-    glVertex3f(0, 0, -35)   # bottom point
-    glVertex3f(-25, -18, 0) # front left
-    glVertex3f(25, -18, 0)  # front right
+    for i in range(8):
+        angle1 = i * 45
+        angle2 = (i + 1) * 45
+        
+        # Calculate girdle points
+        x1 = girdle_radius * math.cos(math.radians(angle1))
+        y1 = girdle_radius * math.sin(math.radians(angle1))
+        x2 = girdle_radius * math.cos(math.radians(angle2))
+        y2 = girdle_radius * math.sin(math.radians(angle2))
+        
+        # Pavilion facet
+        glVertex3f(0, 0, pavilion_depth)  # Bottom point (culet)
+        glVertex3f(x2, y2, 0)             # Girdle point 2
+        glVertex3f(x1, y1, 0)             # Girdle point 1
     glEnd()
+    
+    # Add brilliant sparkle effects
+    glDisable(GL_BLEND)
+    
+    # Multiple small sparkles at different positions
+    sparkle_positions = [
+        (8, 8, 15), (-8, 8, 15), (8, -8, 15), (-8, -8, 15),
+        (12, 0, 10), (-12, 0, 10), (0, 12, 10), (0, -12, 10),
+        (6, 6, 5), (-6, -6, 5), (6, -6, 8), (-6, 6, 8)
+    ]
+    
+    glColor3f(1, 1, 1)  # Bright white sparkles
+    for x, y, z in sparkle_positions:
+        glPushMatrix()
+        glTranslatef(x, y, z)
+        glutSolidSphere(1.5, 6, 6)
+        glPopMatrix()
+    
+    # Rainbow reflection highlights
+    reflection_colors = [
+        (1, 0.8, 0.8),  # Red reflection
+        (0.8, 1, 0.8),  # Green reflection
+        (0.8, 0.8, 1),  # Blue reflection
+        (1, 1, 0.8),    # Yellow reflection
+    ]
+    
+    for i, (r, g, b) in enumerate(reflection_colors):
+        angle = i * 90 + diamond.rotation * 0.5
+        x = 10 * math.cos(math.radians(angle))
+        y = 10 * math.sin(math.radians(angle))
+        z = 8 + i * 3
+        
+        glPushMatrix()
+        glTranslatef(x, y, z)
+        glColor3f(r, g, b)
+        glutSolidSphere(2, 8, 8)
+        glPopMatrix()
     
     glPopMatrix()
 
