@@ -1196,12 +1196,31 @@ def showScreen():
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         glLoadIdentity()
-        glColor3f(1, 1, 1)
-        glPointSize(2)
-        glBegin(GL_POINTS)
-        for x, y in star_positions:
+        
+        # Make stars blink with different speeds and patterns
+        current_time = time.time()
+        
+        # Draw stars with different sizes and brightness
+        for i, (x, y) in enumerate(star_positions):
+            # Create unique blinking pattern for each star
+            blink_speed = 2 + (i % 5) * 0.5  # Different speeds for variety
+            phase_offset = i * 0.1  # Phase offset for each star
+            
+            # Calculate brightness using sine wave for smooth twinkling
+            brightness = 0.3 + 0.7 * abs(math.sin(current_time * blink_speed + phase_offset))
+            
+            # Vary point size based on brightness for more dramatic effect
+            point_size = 1 + brightness * 2
+            glPointSize(point_size)
+            
+            # Set star color with brightness variation
+            glColor3f(brightness, brightness, brightness)
+            
+            # Draw individual star
+            glBegin(GL_POINTS)
             glVertex2f(x + WINDOW_WIDTH // 2, y)
-        glEnd()
+            glEnd()
+        
         glPopMatrix()
         glMatrixMode(GL_PROJECTION)
         glPopMatrix()
