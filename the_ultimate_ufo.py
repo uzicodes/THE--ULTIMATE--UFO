@@ -621,8 +621,38 @@ def draw_ufo():
 def draw_bullet(bullet):
     glPushMatrix()
     glTranslatef(bullet.x, bullet.y, bullet.z)
-    glColor3f(1, 1, 0)  # Yellow bullets
-    glutSolidSphere(6, 8, 8)  # Bigger bullet size (increased from 3 to 6)
+    
+    # Bullet body - metallic brass color
+    glColor3f(0.8, 0.7, 0.2)  # Brass/golden metallic color
+    
+    # Main bullet body (cylinder)
+    glPushMatrix()
+    glRotatef(-90, 1, 0, 0)  # Orient cylinder vertically
+    gluCylinder(gluNewQuadric(), 3, 3, 12, 8, 1)  # Cylindrical body
+    glPopMatrix()
+    
+    # Bullet tip (cone)
+    glPushMatrix()
+    glTranslatef(0, 0, 12)
+    glRotatef(-90, 1, 0, 0)
+    glColor3f(0.6, 0.6, 0.6)  # Darker metallic tip
+    gluCylinder(gluNewQuadric(), 3, 0, 6, 8, 1)  # Pointed tip
+    glPopMatrix()
+    
+    # Bullet base (slightly wider)
+    glPushMatrix()
+    glRotatef(-90, 1, 0, 0)
+    glColor3f(0.7, 0.6, 0.1)  # Slightly darker base
+    gluCylinder(gluNewQuadric(), 3.5, 3, 2, 8, 1)  # Base rim
+    glPopMatrix()
+    
+    # Add small highlight for metallic effect
+    glPushMatrix()
+    glTranslatef(1.5, 0, 6)
+    glColor3f(1, 1, 0.8)  # Bright highlight
+    glutSolidSphere(0.8, 6, 6)
+    glPopMatrix()
+    
     glPopMatrix()
 
 
