@@ -1510,7 +1510,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     glutInitWindowPosition(100, 10)  
-    glutCreateWindow(b"THE ULTIMATE UFO - WITH BOSS")
+    glutCreateWindow(b"THE ULTIMATE UFO ")
     glEnable(GL_DEPTH_TEST)
     glClearColor(0, 0, 0.1, 1)
     glutDisplayFunc(showScreen)
